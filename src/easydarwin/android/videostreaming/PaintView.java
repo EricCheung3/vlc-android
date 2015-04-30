@@ -31,7 +31,7 @@ public class PaintView extends View implements OnTouchListener{
 		super.onDraw(canvas);
 		
 		// Setting the color of the circle
-		mPaint.setColor(Color.YELLOW);
+		mPaint.setColor(Color.GREEN);
 		mPaint.setStyle(Style.STROKE);
 //        RectF oval = new RectF(mX, mY, 60, 80);  
 //        canvas.drawOval(oval, mPaint);  
@@ -50,6 +50,7 @@ public class PaintView extends View implements OnTouchListener{
 				// Getting X,Y coordinate
 				mX = event.getX();
 				mY = event.getY();
+				System.out.println(mX);
 				break;
 		}
 		return true;

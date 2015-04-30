@@ -374,10 +374,10 @@ public class VLCMainActivity extends ActionBarActivity {
         if(current == null || (!current.getTag().equals(mCurrentFragment) && found)) {
             Log.d(TAG, "Reloading displayed fragment");
             if(mCurrentFragment == null || secondaryFragments.contains(mCurrentFragment))
-                mCurrentFragment = "video";
+                mCurrentFragment = "videoStreaming";
             if(!SidebarAdapter.sidebarFragments.contains(mCurrentFragment)) {
                 Log.d(TAG, "Unknown fragment \"" + mCurrentFragment + "\", resetting to video");
-                mCurrentFragment = "video";
+                mCurrentFragment = "videoStreaming";
             }
             Fragment ff = getFragment(mCurrentFragment);
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
@@ -685,7 +685,7 @@ public class VLCMainActivity extends ActionBarActivity {
 
     private void reloadPreferences() {
         SharedPreferences sharedPrefs = getSharedPreferences("MainActivity", MODE_PRIVATE);
-        mCurrentFragment = sharedPrefs.getString("fragment", "video");
+        mCurrentFragment = sharedPrefs.getString("fragment", "videoStreaming");
     }
 
     /**

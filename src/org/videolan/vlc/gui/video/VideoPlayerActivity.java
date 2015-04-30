@@ -38,6 +38,17 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
+import openfire.chat.service.UserServiceImpl;
+
+import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.filter.MessageTypeFilter;
+import org.jivesoftware.smack.filter.PacketFilter;
+import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.util.StringUtils;
 import org.videolan.libvlc.EventHandler;
 import org.videolan.libvlc.IVideoPlayer;
 import org.videolan.libvlc.LibVLC;
@@ -50,8 +61,8 @@ import org.videolan.vlc.VLCApplication;
 import org.videolan.vlc.audio.AudioServiceController;
 import org.videolan.vlc.gui.CommonDialogs;
 import org.videolan.vlc.gui.CommonDialogs.MenuType;
-import org.videolan.vlc.gui.VLCMainActivity;
 import org.videolan.vlc.gui.PreferencesActivity;
+import org.videolan.vlc.gui.VLCMainActivity;
 import org.videolan.vlc.util.AndroidDevices;
 import org.videolan.vlc.util.Strings;
 import org.videolan.vlc.util.VLCInstance;
@@ -76,10 +87,10 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
-import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.MediaRouter;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -92,7 +103,6 @@ import android.text.format.DateFormat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -109,20 +119,16 @@ import android.view.animation.AnimationSet;
 import android.view.animation.AnimationUtils;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.RotateAnimation;
-import android.view.inputmethod.EditorInfo;
-import android.webkit.WebChromeClient;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     public final static String TAG = "VLC/VideoPlayerActivity";
@@ -142,7 +148,6 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private LibVLC mLibVLC;
     private String mLocation;
     
-    private WebView myWebView;
 
     private static final int SURFACE_BEST_FIT = 0;
     private static final int SURFACE_FIT_HORIZONTAL = 1;
@@ -254,7 +259,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private ImageButton mNavMenu;
     private boolean mHasMenu = false;
     private boolean mIsNavMenu = false;
-
+    
+    /**Send message while video is playing*/
+	private String to = "admin@myria";
+    private EditText textMessage;
+    private Button btnSendMessage;
+    
     @Override
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     protected void onCreate(Bundle savedInstanceState) {
@@ -375,40 +385,28 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             mSubtitlesSurfaceHolder.addCallback(mSubtitlesSurfaceCallback);
         }
 
-        //TODO===========================================
-        
-		EditText editComment1 = (EditText) findViewById(R.id.edit_comment1);
-		Button btnComment = (Button)findViewById(R.id.btnComment);
+        /**TODO===========================================*/
+		new GetXMPPConnection().execute();
 		
-		editComment1.setOnEditorActionListener(new OnEditorActionListener() {
-		    @Override
-		    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-		        boolean handled = false;
-		        if (actionId == EditorInfo.IME_ACTION_SEND) {
-		            //sendMessage();
-		        	System.out.println("senddddddd");
-		            handled = true;
-		        }
-		        return handled;
-		    }
-		});
-		//btnComment.setFocusable(true);
-		btnComment.setOnClickListener(new OnClickListener(){
+		textMessage = (EditText) findViewById(R.id.edit_say_something);
+		btnSendMessage = (Button)findViewById(R.id.btn_send_message);
+		// EditText: set android keyboard enter button as send button
+				textMessage.setOnEditorActionListener(new OnEditorActionListener() {
+				    
+				    @Override
+				    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+				    	SendMessage();
+				    	return true;
+				    }
+				});
+		btnSendMessage.setOnClickListener(new OnClickListener(){
 
 			@Override
 			public void onClick(View arg0) {
-				// TODO Auto-generated method stub
-				//popup comment window
-				popupComment();
-			}
+				SendMessage();
+				}
 			
 		});
-//		myWebView = (WebView) findViewById(R.id.webview);
-//		myWebView.getSettings().setJavaScriptEnabled(true);
-//		myWebView.setWebChromeClient(new WebChromeClient());		
-//		myWebView.setWebViewClient(new WebViewClient());
-//
-//		myWebView.loadUrl("http://129.128.184.46:8080/index.html");
         
         mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
         mSeekbar.setOnSeekBarChangeListener(mSeekListener);
@@ -473,50 +471,91 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         updateNavStatus();
     }
 
+    private void SendMessage(){
 
-	PopupWindow pop;
-	protected void popupComment() {
-		// TODO Auto-generated method stub
-		final View v = getLayoutInflater().inflate(R.layout.pop_comment, null,false);
-		int h = getWindowManager().getDefaultDisplay().getHeight();
-		int w = getWindowManager().getDefaultDisplay().getWidth();
-		
-		pop = new PopupWindow(v, w-10, h/2);
-		pop.setAnimationStyle(R.style.MyDialogStyleBottom);
-		pop.setFocusable(true);
-		pop.setBackgroundDrawable(new BitmapDrawable());
-		new Handler().postDelayed(new Runnable(){
+		String text = textMessage.getText().toString();
+		if(!text.equals("")&&text!=null){
+			Log.i("XMPPChatDemoActivity", "Sending text " + text + " to " + to);
+			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(to, org.jivesoftware.smack.packet.Message.Type.chat);
+			msg.setBody(text);
+			if (connection != null) {
+				connection.sendPacket(msg);
 
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				pop.showAtLocation(v, Gravity.BOTTOM, 0, 0);
+				Toast.makeText(getApplicationContext(), text,
+						Toast.LENGTH_SHORT).show();
 			}
-			
-		}, 100L);	
-		
-		myWebView = (WebView) v.findViewById(R.id.webview);
-		myWebView.getSettings().setJavaScriptEnabled(true);
-		myWebView.setWebChromeClient(new WebChromeClient());
-		myWebView.setWebViewClient(new WebViewClient());
-		myWebView.loadUrl("http://129.128.184.46:8080/index.html");
+			textMessage.setText("");
+		}else{
+			Toast.makeText(getApplicationContext(), "The input cannot be null!",
+					Toast.LENGTH_SHORT).show();
+		}	    	
+    
+    }
+	private XMPPConnection connection;
+	@SuppressWarnings("rawtypes")
+	private class GetXMPPConnection extends AsyncTask {
+		@Override
+		protected XMPPConnection doInBackground(Object... urls) {
+			try {
+				if (null == connection || !connection.isAuthenticated()) {
+					XMPPConnection.DEBUG_ENABLED = true;
 
-		myWebView.requestFocus(View.FOCUS_DOWN);//popup keyboard
-		myWebView.setOnTouchListener(new View.OnTouchListener() {
-			@SuppressLint("ClickableViewAccessibility")
-			@Override 
-			public boolean onTouch(View v, MotionEvent event) {
-				switch (event.getAction()) {
-				case MotionEvent.ACTION_DOWN:
-				case MotionEvent.ACTION_UP:
-					if (!v.hasFocus()) {
-						v.requestFocus();
-					}
-					break;
+					ConnectionConfiguration config = new ConnectionConfiguration(
+							UserServiceImpl.SERVER_HOST,
+							UserServiceImpl.SERVER_PORT,
+							UserServiceImpl.SERVER_NAME);
+					config.setReconnectionAllowed(true);
+					config.setSendPresence(true);
+					config.setSASLAuthenticationEnabled(true);
+					connection = new XMPPConnection(config);
+					connection.connect();
+//					connection.login(username, password);
+					// Set the status to available
+					Presence presence = new Presence(Presence.Type.available);
+					connection.sendPacket(presence);
+					// get message listener
+					ReceiveMsgListenerConnection(connection);
+					
 				}
-				return false;
+				
+				return connection;
+			} catch (XMPPException e) {
+				e.printStackTrace();
 			}
-		});
+
+			return connection;
+		}
+	}
+
+	public void ReceiveMsgListenerConnection(XMPPConnection connection) {
+		this.connection = connection;
+		if (connection != null) {
+			// Add a packet listener to get messages sent to us
+			PacketFilter filter = new MessageTypeFilter(org.jivesoftware.smack.packet.Message.Type.chat);
+			connection.addPacketListener(new PacketListener() {
+				@Override
+				public void processPacket(Packet packet) {
+					org.jivesoftware.smack.packet.Message message = (org.jivesoftware.smack.packet.Message) packet;
+					if (message.getBody() != null) {
+						final String[] fromName = StringUtils.parseBareAddress(
+								message.getFrom()).split("@");
+						Log.i("XMPPChatDemoActivity", "Text Recieved "
+								+ message.getBody() + " from " + fromName[0]);
+
+						final String msg = message.getBody().toString();
+						// Add the incoming message to the list view
+						mHandler.post(new Runnable() {
+							public void run() {
+								// notification or chat...
+								Toast.makeText(getApplicationContext(),
+											fromName[0] + ": " + msg,
+											Toast.LENGTH_SHORT).show();
+							}
+						});
+					}
+				}
+			}, filter);
+		}
 	}
     @Override
     protected void onPause() {
@@ -2247,8 +2286,6 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         private SurfaceHolder mSubtitlesSurfaceHolder;
         private FrameLayout mSurfaceFrame;
         private LibVLC mLibVLC;
-
-        private WebView myWebView;
         
         public SecondaryDisplay(Context context, Display display) {
             super(context, display);
@@ -2300,13 +2337,6 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
                 mSubtitlesSurface.setVisibility(View.VISIBLE);
             Log.i(TAG, "Secondary display created");
             
-            //TODO=========================================
-    		myWebView = (WebView) findViewById(R.id.webview);
-    		myWebView.getSettings().setJavaScriptEnabled(true);
-    		myWebView.setWebChromeClient(new WebChromeClient());		
-    		myWebView.setWebViewClient(new WebViewClient());
-
-    		myWebView.loadUrl("http://129.128.184.46:8080/index.html");
         }
     }
 

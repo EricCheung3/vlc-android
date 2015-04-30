@@ -109,7 +109,7 @@ public class SettingsActivity extends PreferenceActivity {
 
 		final SharedPreferences settings = PreferenceManager
 				.getDefaultSharedPreferences(this);
-		final ListPreference videoResolution = (ListPreference) findPreference("video_resolution");
+//		final ListPreference videoResolution = (ListPreference) findPreference("video_resolution");
 		bindPreferenceSummaryToValue(findPreference("key_device_id"));
 		bindPreferenceSummaryToValue(findPreference("key_server_address"));
 		bindPreferenceSummaryToValue(findPreference("key_server_port"));
@@ -120,19 +120,19 @@ public class SettingsActivity extends PreferenceActivity {
 		bindPreferenceSummaryToValue(findPreference("key_transport_list"));
 
 		
-		videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				Editor editor = settings.edit();
-				Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+)");
-				Matcher matcher = pattern.matcher((String)newValue);
-				matcher.find();
-				editor.putInt("video_resX", Integer.parseInt(matcher.group(1)));
-				editor.putInt("video_resY", Integer.parseInt(matcher.group(2)));
-				editor.commit();
-				videoResolution.setSummary(getString(R.string.settings11)+" "+(String)newValue+"px");
-				return true;
-			}
-		});
+//		videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+//			public boolean onPreferenceChange(Preference preference, Object newValue) {
+//				Editor editor = settings.edit();
+//				Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+)");
+//				Matcher matcher = pattern.matcher((String)newValue);
+//				matcher.find();
+//				editor.putInt("video_resX", Integer.parseInt(matcher.group(1)));
+//				editor.putInt("video_resY", Integer.parseInt(matcher.group(2)));
+//				editor.commit();
+//				videoResolution.setSummary(getString(R.string.settings11)+" "+(String)newValue+"px");
+//				return true;
+//			}
+//		});
 		
 		try {
 			findPreference("key_about").setTitle("Version：" + getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
@@ -222,21 +222,21 @@ public class SettingsActivity extends PreferenceActivity {
 				preference.setSummary(stringValue);
 			}
 
-			if (preference.getKey().equals("video_framerate")) {
-				int fr = Integer.parseInt(stringValue);
-				if (fr > 30) {
-					fr = 30;
-				} else if (20 <= fr &&fr < 30) {
-					fr = 20;
-				}else if (fr < 20) {
-					fr = 15;
-				}
-				EditTextPreference ep = (EditTextPreference) preference;
-				ep.setText("" + fr);
-				preference.setSummary("" + fr);
-				PreferenceManager.getDefaultSharedPreferences(preference.getContext()).edit().putString("frame_rate", "" + fr).commit();
-				return false;
-			}
+//			if (preference.getKey().equals("video_framerate")) {
+//				int fr = Integer.parseInt(stringValue);
+////				if (fr > 30) {
+////					fr = 30;
+////				} else if (20 <= fr &&fr < 30) {
+////					fr = 20;
+////				}else if (fr < 20) {
+////					fr = 15;
+////				}
+////				EditTextPreference ep = (EditTextPreference) preference;
+////				ep.setText("" + fr);
+//				preference.setSummary("" + fr);
+//				PreferenceManager.getDefaultSharedPreferences(preference.getContext()).edit().putString("frame_rate", "" + fr).commit();
+//				return false;
+//			}
 			return true;
 		}
 	};
@@ -278,8 +278,8 @@ public class SettingsActivity extends PreferenceActivity {
 			// to their values. When their values change, their summaries are
 			// updated to reflect the new value, per the Android Design
 			// guidelines.
-			bindPreferenceSummaryToValue(findPreference("example_text"));
-			bindPreferenceSummaryToValue(findPreference("example_list"));
+//			bindPreferenceSummaryToValue(findPreference("example_text"));
+//			bindPreferenceSummaryToValue(findPreference("example_list"));
 		}
 	}
 

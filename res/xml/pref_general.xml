@@ -60,15 +60,13 @@
             android:title="@string/settings11" />
 
         <!-- video_resolution/video_framerate/ -->
-        <EditTextPreference
-            android:capitalize="words"
-            android:defaultValue="20"
-            android:inputType="number"
+
+        <ListPreference
+            android:defaultValue="15"
+            android:entries="@array/videoFramerateArray"
+            android:entryValues="@array/videoFramerateValues"
             android:key="video_framerate"
-            android:maxLines="1"
-            android:selectAllOnFocus="true"
-            android:singleLine="true"
-            android:title="FrameRate" />
+            android:title="@string/settings15" />
 <!-- 
         <ListPreference
             android:defaultValue="2"

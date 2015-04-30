@@ -78,7 +78,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -106,6 +105,7 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
+@SuppressLint("ClickableViewAccessibility")
 public class VideoStreamingFragment extends Fragment implements Callback,
 		RtspClient.Callback, android.view.SurfaceHolder.Callback,
 		OnClickListener {
@@ -113,7 +113,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	private static final int REQUEST_SETTING = 1000;
 	// current system info msg
 	private static final int msgKey1 = 1;
-	private PowerManager.WakeLock wl;
+
 	private BroadcastReceiver mReceiver;
 	private String mAddress;
 	private String mPort;
@@ -166,11 +166,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		configureProviderManager(ProviderManager.getInstance());
 		faActivity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
 				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		wl = ((PowerManager) faActivity.getSystemService(Context.POWER_SERVICE))
-				.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK,
-						"com.control.wakelock");
-		// SharedPreferences pref =
-		// PreferenceManager.getDefaultSharedPreferences(this);
 
 		preferences = PreferenceManager.getDefaultSharedPreferences(faActivity);
 
@@ -189,7 +184,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		initView(v);
 		curDateTime = new SimpleDateFormat(
 				"yyyy_MM_dd_HH_mm_ss").format(Calendar.getInstance().getTime());
-		streaminglink = streaminglink + getDefaultDeviceId()+ curDateTime + ".sdp";
+//		streaminglink = streaminglink + getDefaultDeviceId()+ curDateTime + ".sdp";
+		streaminglink = streaminglink + "live.sdp";
 		System.out.println(streaminglink);
 		boolean bParamInvalid = (TextUtils.isEmpty(mAddress)
 				|| TextUtils.isEmpty(mPort) || TextUtils.isEmpty(mVideoName));
@@ -209,7 +205,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 
 		/** TODO================================================================ */
-
 //		connection = GetConnection(username, password);
 		new GetXMPPConnection().execute();
 		// Set the status to available
@@ -219,42 +214,24 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 //		ReceiveMsgListenerConnection(connection);
 		// (new ReceiveMessageThread()).start();
 		
-
-		
 		btnSelectContact.setOnClickListener(this);
 		btnOption.setOnClickListener(this);
 		btnStop.setOnClickListener(this);
 		btnSendMessage.setOnClickListener(this);
 		// EditText: set android keyboard enter button as send button
-		textMessage.setOnEditorActionListener(new OnEditorActionListener() {
-		    
+		textMessage.setOnEditorActionListener(new OnEditorActionListener() {	    
 		    @Override
 		    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-//				String to = "admin@myria";
-				String text = textMessage.getText().toString();
-				if(!text.equals("")&&text!=null){
-					Log.i("XMPPChatDemoActivity", "Sending text " + text + " to " + to);
-					Message msg = new Message(to, Message.Type.chat);
-					msg.setBody(text);
-					if (connection != null) {
-						connection.sendPacket(msg);
-						messages.add(connection.getUser().split("@")[0] + ":");
-						messages.add(text);
-						Toast.makeText(faActivity.getApplicationContext(), text,
-								Toast.LENGTH_SHORT).show();
-					}
-					textMessage.setText("");
-				}else{
-					Toast.makeText(faActivity.getApplicationContext(), "The input cannot be null!",
-							Toast.LENGTH_SHORT).show();
-				}
-				return true;	    	
+		    	SendMessage();
+		    	return true;
 		    }
 		});
-
+		
+		
 		return v;
 	}
 
+	@SuppressWarnings("deprecation")
 	public void initView(View v) {
 
 		mAddress = preferences.getString("key_server_address", null);
@@ -319,26 +296,30 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 			break;
 		case R.id.btn_send_message:
-//			String to = "admin@myria";
-			String text = textMessage.getText().toString();
-			if(!text.equals("")&&text!=null){
-				Log.i("XMPPChatDemoActivity", "Sending text " + text + " to " + to);
-				Message msg = new Message(to, Message.Type.chat);
-				msg.setBody(text);
-				if (connection != null) {
-					connection.sendPacket(msg);
-					messages.add(connection.getUser().split("@")[0] + ":");
-					messages.add(text);
-					Toast.makeText(faActivity.getApplicationContext(), text,
-							Toast.LENGTH_SHORT).show();
-				}
-				textMessage.setText("");
-			}else{
-				Toast.makeText(faActivity.getApplicationContext(), "The input cannot be null!",
-						Toast.LENGTH_SHORT).show();
-			}
+			SendMessage();
 			break;
 		}
+	}
+	
+	private void SendMessage(){
+
+		String text = textMessage.getText().toString();
+		if(!text.equals("")&&text!=null){
+			Log.i("XMPPChatDemoActivity", "Sending text " + text + " to " + to);
+			Message msg = new Message(to, Message.Type.chat);
+			msg.setBody(text);
+			if (connection != null) {
+				connection.sendPacket(msg);
+				messages.add(connection.getUser().split("@")[0] + ":");
+				messages.add(text);
+				Toast.makeText(faActivity.getApplicationContext(), text,
+						Toast.LENGTH_SHORT).show();
+			}
+			textMessage.setText("");
+		}else{
+			Toast.makeText(faActivity.getApplicationContext(), "The input cannot be null!",
+					Toast.LENGTH_SHORT).show();
+		} 
 	}
 
 	/**
@@ -444,8 +425,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 				mClient.setCredentials("", "");
 				mClient.setServerAddress(mAddress, Integer.parseInt(mPort));
-				mClient.setStreamPath(String.format("/%s.sdp",preferences.getString("key_device_id", Build.MODEL)));
-				mClient.setStreamPath(String.format("/%s.sdp",getDefaultDeviceId()+curDateTime));
+//				mClient.setStreamPath(String.format("/%s.sdp",preferences.getString("key_device_id", Build.MODEL)));
+				mClient.setStreamPath(String.format("/%s.sdp",mVideoName));
 				
 				/**
 				 * IMPORTANT, start push stream.*/
@@ -494,8 +475,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			} while (alive);
 		}
 
-		@SuppressLint({ "HandlerLeak", "SimpleDateFormat" })
+		@SuppressLint("HandlerLeak")
 		private Handler mHandler = new Handler() {
+			@SuppressLint("SimpleDateFormat")
 			@Override
 			public void handleMessage(android.os.Message msg) {
 				super.handleMessage(msg);
@@ -567,6 +549,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	// Select contact function
 
+	@SuppressWarnings("deprecation")
 	private void popupContactList(String entries) {
 
 		// connection = GetConnection(username, password);
@@ -659,29 +642,29 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		});
 	}
 
-	private XMPPConnection GetConnection(String username, String passwd) {
-		try {
-			if (null == connection || !connection.isAuthenticated()) {
-				XMPPConnection.DEBUG_ENABLED = true;
-
-				ConnectionConfiguration config = new ConnectionConfiguration(
-						UserServiceImpl.SERVER_HOST,
-						UserServiceImpl.SERVER_PORT,
-						UserServiceImpl.SERVER_NAME);
-				config.setReconnectionAllowed(true);
-				config.setSendPresence(true);
-				config.setSASLAuthenticationEnabled(true);
-				connection = new XMPPConnection(config);
-				connection.connect();
-				connection.login(username, passwd);
-
-				return connection;
-			}
-		} catch (XMPPException xe) {
-			Log.e("XMPPChatDemoActivity", xe.toString());
-		}
-		return null;
-	}
+//	private XMPPConnection GetConnection(String username, String passwd) {
+//		try {
+//			if (null == connection || !connection.isAuthenticated()) {
+//				XMPPConnection.DEBUG_ENABLED = true;
+//
+//				ConnectionConfiguration config = new ConnectionConfiguration(
+//						UserServiceImpl.SERVER_HOST,
+//						UserServiceImpl.SERVER_PORT,
+//						UserServiceImpl.SERVER_NAME);
+//				config.setReconnectionAllowed(true);
+//				config.setSendPresence(true);
+//				config.setSASLAuthenticationEnabled(true);
+//				connection = new XMPPConnection(config);
+//				connection.connect();
+//				connection.login(username, passwd);
+//
+//				return connection;
+//			}
+//		} catch (XMPPException xe) {
+//			Log.e("XMPPChatDemoActivity", xe.toString());
+//		}
+//		return null;
+//	}
 
 	public void ReceiveMsgListenerConnection(XMPPConnection connection) {
 		this.connection = connection;
@@ -719,6 +702,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	private void popupReceiveStreamingLinkMessage(String message) {
 
 		final View v = faActivity.getLayoutInflater().inflate(R.layout.streaminglink,
@@ -745,13 +729,16 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		btn_Send.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				// DO PLAYING
+				
 				popStreamingLink.dismiss();
+				System.out.println("playiiiiiiiiiiiiiiiiiii");
 			}
 		});
 		Button btn_cancel = (Button) v.findViewById(R.id.btn_cancle);
 		btn_cancel.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				popStreamingLink.dismiss();
+				System.out.println("cancellllllllllllllll");
 			}
 		});
 	}
@@ -773,18 +760,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		stopStream();
 	}
 
-	@Override
-	public void onStart() {
-		super.onStart();
-		wl.acquire();
-	}
-
-	@Override
-	public void onStop() {
-		super.onStop();
-		if (wl.isHeld())
-			wl.release();
-	}
 	// Add user
 	public static boolean addUsers(Roster roster, String userName, String name) {
 		try {
@@ -1032,12 +1007,12 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			} else if (key.equals("video_resolution")) {
 				Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+)");
 				Matcher matcher = pattern.matcher(preferences.getString(
-						"video_resolution", "320x240"));
+						"video_resolution", "640x480"));
 				matcher.find();
 				//videoQuality.
 				Log.i("Integer.parseInt(matcher.group(1))",matcher.group(1));
-//				videoQuality.resX = Integer.parseInt(matcher.group(1));
-//				videoQuality.resY = Integer.parseInt(matcher.group(2));
+				videoQuality.resX = Integer.parseInt(matcher.group(1));
+				videoQuality.resY = Integer.parseInt(matcher.group(2));
 			} else if (key.equals("video_framerate")) {
 				videoQuality.framerate = Integer.parseInt(preferences
 						.getString("video_framerate", "15"));
@@ -1087,25 +1062,17 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				}
 			}
 
-			// configure the room
-			// 设置聊天室是持久聊天室，即将要被保存下来  
-	        submitForm.setAnswer("muc#roomconfig_persistentroom", false);  
-	        // 房间仅对成员开放  
+			// configure the room 
+	        submitForm.setAnswer("muc#roomconfig_persistentroom", false);   
 	        submitForm.setAnswer("muc#roomconfig_membersonly", false);  
-	        // 允许占有者邀请其他人  
 	        submitForm.setAnswer("muc#roomconfig_allowinvites", true);  
-	        // 进入是否需要密码  
-	        //submitForm.setAnswer("muc#roomconfig_passwordprotectedroom", false);  
 
-	        // 登录房间对话  
+	        //submitForm.setAnswer("muc#roomconfig_passwordprotectedroom", false);  
+	        
 	        submitForm.setAnswer("muc#roomconfig_enablelogging", true);  
-	        // 仅允许注册的昵称登录  
 	        submitForm.setAnswer("x-muc#roomconfig_reservednick", true);  
-	        // 允许使用者修改昵称  
 	        submitForm.setAnswer("x-muc#roomconfig_canchangenick", true);  
-	        // 允许用户注册房间  
 	        submitForm.setAnswer("x-muc#roomconfig_registration", false);  
-	        // 发送已完成的表单（有默认值）到服务器来配置聊天室  
 	        submitForm.setAnswer("muc#roomconfig_passwordprotectedroom", true);
 	        
 			muc.sendConfigurationForm(submitForm);
@@ -1363,6 +1330,4 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}
 	}
 
-	
-	//Requested audio with 32kbps at 8kHz
 }

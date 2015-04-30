@@ -49,10 +49,10 @@
             android:defaultValue="0"
             android:entries="@array/cameraArray"
             android:entryValues="@array/cameraValues"
-            android:key="p_video_camera"
+            android:key="video_camera"
             android:title="@string/settings13" />
         <ListPreference
-            android:defaultValue="320*240"
+            android:defaultValue="640x480"
             android:entries="@array/videoResolutionArray"
             android:entryValues="@array/videoResolutionArray"
             android:key="video_resolution"

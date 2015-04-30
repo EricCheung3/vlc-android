@@ -42,32 +42,32 @@
         -->
     </FrameLayout>
 
-    <RelativeLayout
-        android:id="@+id/linear2"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_alignParentBottom="true"
-        android:background="@android:color/transparent"
-        android:orientation="vertical" >
-
-        <EditText
-            android:id="@+id/edit_comment1"
-            android:layout_width="wrap_content"
-            android:layout_height="35dp"
+        <RelativeLayout
+            android:id="@+id/linear2"
+            android:layout_width="fill_parent"
+            android:layout_height="50dp"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
-            android:hint="say something..."
-            android:imeOptions="actionSend"
-            android:inputType="textAutoCorrect" />
+            android:background="@android:color/transparent"
+            android:orientation="vertical" >
 
-        <Button
-            android:id="@+id/btnComment"
-            android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true"
-            android:text="comment" />
-    </RelativeLayout>
+            <EditText
+                android:id="@+id/edit_say_something"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentLeft="true"
+                android:hint="say something..."
+                android:imeOptions="actionSend"
+                android:inputType="textAutoCorrect" />
+
+            <Button
+                android:id="@+id/btn_send_message"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:text="send" />
+        </RelativeLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
