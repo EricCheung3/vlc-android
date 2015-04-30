@@ -121,7 +121,7 @@ public class AboutFragment extends Fragment {
             public void onTouchClick() {}
             @Override
             public void onBackSwitched() {
-                MainActivity activity = (MainActivity)getActivity();
+                VLCMainActivity activity = (VLCMainActivity)getActivity();
                 activity.popSecondaryFragment();
             }
         });

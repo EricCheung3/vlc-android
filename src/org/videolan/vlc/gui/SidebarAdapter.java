@@ -67,7 +67,7 @@ public class SidebarAdapter extends BaseAdapter {
 
     static {
         SidebarEntry entries2[] = {
-        	new SidebarEntry( "videoStreaming", R.string.videoStreaming, R.attr.ic_menu_video ),
+//        	new SidebarEntry( "videoStreaming", R.string.videoStreaming, R.attr.ic_menu_video ),
             new SidebarEntry( "video", R.string.video, R.attr.ic_menu_video ),
             new SidebarEntry( "audio", R.string.audio, R.attr.ic_menu_audio ),
             new SidebarEntry( "directories", R.string.directories, R.attr.ic_menu_folder ),
@@ -114,13 +114,13 @@ public class SidebarAdapter extends BaseAdapter {
         }
         TextView textView = (TextView)v;
         textView.setText(sidebarEntry.name);
-        Drawable img = VLCApplication.getAppResources().getDrawable(
-                Util.getResourceFromAttribute(mContext, sidebarEntry.attributeID));
-        if (img != null) {
-            int dp_32 = Util.convertDpToPx(32);
-            img.setBounds(0, 0, dp_32, dp_32);
-            textView.setCompoundDrawables(img, null, null, null);
-        }
+//        Drawable img = VLCApplication.getAppResources().getDrawable(
+//                Util.getResourceFromAttribute(mContext, sidebarEntry.attributeID));
+//        if (img != null) {
+//            int dp_32 = Util.convertDpToPx(32);
+//            img.setBounds(0, 0, dp_32, dp_32);
+//            textView.setCompoundDrawables(img, null, null, null);
+//        }
         // Set in bold the current item.
         if (mCurrentFragmentId.equals(sidebarEntry.id))
             textView.setTypeface(null, Typeface.BOLD);
@@ -150,9 +150,10 @@ public class SidebarAdapter extends BaseAdapter {
             f = new DirectoryViewFragment();
         } else if(id.equals("history")) {
             f = new HistoryFragment();
-        } else if(id.equals("videoStreaming")) {
-            f = new VideoStreamingFragment();
         }
+//        } else if(id.equals("videoStreaming")) {
+//            f = new VideoStreamingFragment();
+//        }
         else {
             mCurrentFragmentId = prevFragmentId; // Restore the current fragment id.
             throw new IllegalArgumentException("Wrong fragment id.");

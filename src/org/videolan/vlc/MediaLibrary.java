@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.LibVlcException;
 import org.videolan.libvlc.Media;
-import org.videolan.vlc.gui.MainActivity;
+import org.videolan.vlc.gui.VLCMainActivity;
 import org.videolan.vlc.gui.audio.AudioBrowserFragment;
 import org.videolan.vlc.gui.video.VideoGridFragment;
 import org.videolan.vlc.util.AndroidDevices;
@@ -219,7 +219,7 @@ public class MediaLibrary {
             final MediaDatabase DBManager = MediaDatabase.getInstance();
 
             // show progressbar in footer
-            MainActivity.showProgressBar();
+            VLCMainActivity.showProgressBar();
 
             List<File> mediaDirs = DBManager.getMediaDirs();
             if (mediaDirs.size() == 0) {
@@ -302,7 +302,7 @@ public class MediaLibrary {
                 // Process the stacked items
                 for (File file : mediaToScan) {
                     String fileURI = LibVLC.PathToURI(file.getPath());
-                    MainActivity.sendTextInfo(file.getName(), count,
+                    VLCMainActivity.sendTextInfo(file.getName(), count,
                             mediaToScan.size());
                     count++;
                     if (existingMedias.containsKey(fileURI)) {
@@ -352,8 +352,8 @@ public class MediaLibrary {
                 }
 
                 // hide progressbar in footer
-                MainActivity.clearTextInfo();
-                MainActivity.hideProgressBar();
+                VLCMainActivity.clearTextInfo();
+                VLCMainActivity.hideProgressBar();
 
                 VideoGridFragment.actionScanStop();
 

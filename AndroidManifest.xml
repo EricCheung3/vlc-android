@@ -20,9 +20,28 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-permission android:name="android.permission.READ_CONTACTS"/>
-	<uses-permission android:name="android.permission.WRITE_CONTACTS" />
-	<uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+
+    <!--
+        <application
+        android:icon="@drawable/icon"
+        android:label="@string/app_name" >
+        <activity
+            android:name="openfire.chat.activity.LoginActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="openfire.chat.activity.RegisterActivity" />
+        <activity android:name="openfire.chat.activity.MainActivity" />
+
+    </application>
+    -->
     <application
         android:name="org.videolan.vlc.VLCApplication"
         android:hardwareAccelerated="true"
@@ -31,12 +50,12 @@
         android:logo="@drawable/icon"
         android:theme="@style/Theme.VLC.NoTitleBar" >
         <activity
-            android:name=".gui.MainActivity"
-			android:configChanges="orientation|screenSize"
-			android:screenOrientation="portrait"
+            android:name="openfire.chat.activity.LoginActivity"
+            android:configChanges="orientation|screenSize"
             android:icon="@drawable/icon"
             android:label="@string/app_name"
             android:launchMode="singleTask"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.VLC" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -44,6 +63,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+ 		<activity
+            android:name="org.videolan.vlc.gui.VLCMainActivity"/>
+        <activity android:name="org.easydarwin.android.camera.NEWMainActivity" />
+        <activity android:name="org.easydarwin.android.camera.VideoStreamingFragment" />
+        <activity android:name="openfire.chat.activity.RegisterActivity" />
+        <activity android:name="openfire.chat.activity.ChatMainActivity" />
         <activity
             android:name="org.easydarwin.android.camera.SettingsActivity"
             android:label="@string/title_activity_settings"
@@ -71,8 +96,6 @@
             android:name=".gui.video.VideoPlayerActivity"
             android:configChanges="orientation|screenSize"
             android:theme="@style/Theme.VLC.Fullscreen" >
-
-            <!-- This filter captures protocols without type info -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -91,7 +114,6 @@
                 <data android:scheme="udp" />
                 <data android:scheme="vlc" />
             </intent-filter>
-            <!-- This filter captures protocols with type info -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -162,9 +184,6 @@
                 <data android:scheme="http" />
                 <data android:scheme="https" />
                 <data android:host="*" />
-
-                <!-- video -->
-
                 <data android:pathPattern=".*\\.3g2" />
                 <data android:pathPattern=".*\\.3gp" />
                 <data android:pathPattern=".*\\.3gp2" />
@@ -185,7 +204,6 @@
                 <data android:pathPattern=".*\\.m2v" />
                 <data android:pathPattern=".*\\.m2t" />
                 <data android:pathPattern=".*\\.m2ts" />
-                <!-- <data android:pathPattern=".*\\.m3u" /> -->
                 <data android:pathPattern=".*\\.m3u8" />
                 <data android:pathPattern=".*\\.mkv" />
                 <data android:pathPattern=".*\\.mov" />
@@ -244,7 +262,6 @@
                 <data android:pathPattern=".*\\.M2V" />
                 <data android:pathPattern=".*\\.M2T" />
                 <data android:pathPattern=".*\\.M2TS" />
-                <!-- <data android:pathPattern=".*\\.M3U" /> -->
                 <data android:pathPattern=".*\\.M3U8" />
                 <data android:pathPattern=".*\\.MKV" />
                 <data android:pathPattern=".*\\.MOV" />
@@ -283,9 +300,6 @@
                 <data android:pathPattern=".*\\.WMV" />
                 <data android:pathPattern=".*\\.WTV" />
                 <data android:pathPattern=".*\\.XESC" />
-
-                <!-- audio -->
-
                 <data android:pathPattern=".*\\.3ga" />
                 <data android:pathPattern=".*\\.a52" />
                 <data android:pathPattern=".*\\.aac" />

@@ -36,7 +36,7 @@ import org.videolan.vlc.Thumbnailer;
 import org.videolan.vlc.VLCApplication;
 import org.videolan.vlc.audio.AudioServiceController;
 import org.videolan.vlc.gui.CommonDialogs;
-import org.videolan.vlc.gui.MainActivity;
+import org.videolan.vlc.gui.VLCMainActivity;
 import org.videolan.vlc.interfaces.ISortable;
 import org.videolan.vlc.util.Util;
 import org.videolan.vlc.util.VLCRunnable;
@@ -268,7 +268,7 @@ public class VideoGridFragment extends SherlockGridFragment implements ISortable
     public void onGridItemClick(GridView l, View v, int position, long id) {
         Media media = (Media) getListAdapter().getItem(position);
         if (media instanceof MediaGroup) {
-            MainActivity activity = (MainActivity)getActivity();
+            VLCMainActivity activity = (VLCMainActivity)getActivity();
             VideoGridFragment frag = (VideoGridFragment)activity.showSecondaryFragment("videoGroupList");
             if (frag != null) {
                 frag.setGroup(media.getTitle());
@@ -298,7 +298,7 @@ public class VideoGridFragment extends SherlockGridFragment implements ISortable
             playAudio(media);
             return true;
         case R.id.video_list_info:
-            MainActivity activity = (MainActivity)getActivity();
+            VLCMainActivity activity = (VLCMainActivity)getActivity();
             MediaInfoFragment frag = (MediaInfoFragment)activity.showSecondaryFragment("mediaInfo");
             if (frag != null) {
                 frag.setMediaLocation(media.getLocation());

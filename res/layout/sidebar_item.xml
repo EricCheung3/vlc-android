@@ -11,5 +11,4 @@
     android:gravity="left|center_vertical"
     android:padding="13dip"
     android:text="@string/title"
-    android:textColor="?attr/list_menu"
     android:textSize="20sp" />

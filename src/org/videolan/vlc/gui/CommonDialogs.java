@@ -157,7 +157,7 @@ public class CommonDialogs {
             });
             equalizer.setVisibility(View.GONE);
         } else {
-            final MainActivity activity = (MainActivity)context;
+            final VLCMainActivity activity = (VLCMainActivity)context;
             equalizer.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

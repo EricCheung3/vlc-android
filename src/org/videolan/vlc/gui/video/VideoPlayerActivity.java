@@ -50,7 +50,7 @@ import org.videolan.vlc.VLCApplication;
 import org.videolan.vlc.audio.AudioServiceController;
 import org.videolan.vlc.gui.CommonDialogs;
 import org.videolan.vlc.gui.CommonDialogs.MenuType;
-import org.videolan.vlc.gui.MainActivity;
+import org.videolan.vlc.gui.VLCMainActivity;
 import org.videolan.vlc.gui.PreferencesActivity;
 import org.videolan.vlc.util.AndroidDevices;
 import org.videolan.vlc.util.Strings;
@@ -1112,7 +1112,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         // Show the MainActivity if it is not in background.
         if (getIntent().getAction() != null
             && getIntent().getAction().equals(Intent.ACTION_VIEW)) {
-            Intent i = new Intent(this, MainActivity.class);
+            Intent i = new Intent(this, VLCMainActivity.class);
             startActivity(i);
         }
         finish();

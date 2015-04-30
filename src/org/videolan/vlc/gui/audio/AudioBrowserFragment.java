@@ -30,7 +30,7 @@ import org.videolan.vlc.MediaLibrary;
 import org.videolan.vlc.R;
 import org.videolan.vlc.audio.AudioServiceController;
 import org.videolan.vlc.gui.CommonDialogs;
-import org.videolan.vlc.gui.MainActivity;
+import org.videolan.vlc.gui.VLCMainActivity;
 import org.videolan.vlc.util.AndroidDevices;
 import org.videolan.vlc.util.VLCRunnable;
 import org.videolan.vlc.util.WeakHandler;
@@ -182,7 +182,7 @@ public class AudioBrowserFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> av, View v, int p, long id) {
             ArrayList<Media> mediaList = mArtistsAdapter.getMedia(p);
-            MainActivity activity = (MainActivity)getActivity();
+            VLCMainActivity activity = (VLCMainActivity)getActivity();
             AudioAlbumsSongsFragment frag = (AudioAlbumsSongsFragment)activity.showSecondaryFragment("albumsSongs");
             if (frag != null) {
                 frag.setMediaList(mediaList, mediaList.get(0).getArtist());
@@ -202,7 +202,7 @@ public class AudioBrowserFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> av, View v, int p, long id) {
             ArrayList<Media> mediaList = mGenresAdapter.getMedia(p);
-            MainActivity activity = (MainActivity)getActivity();
+            VLCMainActivity activity = (VLCMainActivity)getActivity();
             AudioAlbumsSongsFragment frag = (AudioAlbumsSongsFragment)activity.showSecondaryFragment("albumsSongs");
             if (frag != null) {
                 frag.setMediaList(mediaList, mediaList.get(0).getGenre());

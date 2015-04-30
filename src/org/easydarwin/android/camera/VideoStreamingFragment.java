@@ -17,6 +17,7 @@ import net.majorkernelpanic.streaming.rtsp.RtspClient;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 
 import org.videolan.vlc.R;
+import org.videolan.vlc.gui.VLCMainActivity;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -37,20 +38,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.WebChromeClient;
@@ -61,13 +58,14 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
-public class VideoStreamingFragment extends Fragment implements Callback,
+public class VideoStreamingFragment extends Activity implements Callback,
 		RtspClient.Callback, android.view.SurfaceHolder.Callback {
 
 	private static final int REQUEST_SETTING = 1000;
@@ -95,26 +93,28 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	private boolean alive = false;
 	private SurfaceView mSurfaceView;
 	private static SurfaceHolder surfaceHolder;
-	SharedPreferences preferences;
+	private SharedPreferences preferences;
 	private WebView myWebView;
 
+	private ImageButton openUrlStreaming;
+	
 	Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+)");
 
-	FragmentActivity faActivity;
+	VideoStreamingFragment faActivity;
 
 	@SuppressLint({ "SetJavaScriptEnabled", "JavascriptInterface" })
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
+	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		faActivity = (FragmentActivity) super.getActivity();
-
-		getActivity().getWindow().setFlags(
+		setContentView(R.layout.streaming_main);
+		faActivity = VideoStreamingFragment.this;
+		
+		getWindow().setFlags(
 				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
 				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-		View v = inflater.inflate(R.layout.streaming_main, container, false);
+		//View v = inflater.inflate(R.layout.streaming_main, container, false);
 
 		SharedPreferences pref = PreferenceManager
 				.getDefaultSharedPreferences(faActivity);
@@ -139,10 +139,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		mPort = preferences.getString("key_server_port", null);
 		mDeviceId = preferences.getString("key_device_id", null);
 
-		ipView = (TextView) v.findViewById(R.id.main_text_description);
-		mTime = (TextView) v.findViewById(R.id.timeDisplay);
-		EditText editComment1 = (EditText) v.findViewById(R.id.edit_comment1);
-		Button btnComment = (Button) v.findViewById(R.id.btnComment);
+		ipView = (TextView) findViewById(R.id.main_text_description);
+		mTime = (TextView) findViewById(R.id.timeDisplay);
+		EditText editComment1 = (EditText) findViewById(R.id.edit_comment1);
+		Button btnComment = (Button) findViewById(R.id.btnComment);
 
 		editComment1.setOnEditorActionListener(new OnEditorActionListener() {
 			@Override
@@ -185,8 +185,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					Integer.parseInt(mPort), mDeviceId));
 		}
 
-		mSurfaceView = (net.majorkernelpanic.streaming.gl.SurfaceView) v
-				.findViewById(R.id.surface);
+		mSurfaceView = (net.majorkernelpanic.streaming.gl.SurfaceView) findViewById(R.id.surface);
 
 		mSurfaceView.setAspectRatioMode(SurfaceView.ASPECT_RATIO_PREVIEW);
 		surfaceHolder = mSurfaceView.getHolder();
@@ -194,7 +193,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		// needed for sdk<11
 		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 
-		btnSelectContact = (Button) v.findViewById(R.id.btnPlay);
+		btnSelectContact = (Button) findViewById(R.id.btnPlay);
 		btnSelectContact.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -211,7 +210,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			}
 		});
 
-		btnOption = (Button) v.findViewById(R.id.btnOptions);
+		btnOption = (Button) findViewById(R.id.btnOptions);
 		btnOption.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -222,7 +221,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			}
 		});
 
-		btnStop = (Button) v.findViewById(R.id.btnStop);
+		btnStop = (Button) findViewById(R.id.btnStop);
 		btnStop.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -234,13 +233,24 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
 							mAddress, Integer.parseInt(mPort), mDeviceId));
 				}
-				getActivity().finish();
+				 finish();
 			}
 		});
-		return v;
+//		return v;
 
+		openUrlStreaming = (ImageButton) findViewById(R.id.ml_menu_open_mrl);
+		openUrlStreaming.setOnClickListener(new OnClickListener(){
+			
+			@Override
+			public void onClick(View arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		
 	}
-
+	
 	// Select contact function
 	private Button btn_OK_PLAY;
 	private Button btn_Cancel;
@@ -252,11 +262,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	private void popupContactList() {
 		// TODO Auto-generated method stub
-		final View v = getActivity().getLayoutInflater().inflate(
+		final View v =  getLayoutInflater().inflate(
 				R.layout.contact_list, null, false);
-		int h = getActivity().getWindowManager().getDefaultDisplay()
+		int h =  getWindowManager().getDefaultDisplay()
 				.getHeight();
-		int w = getActivity().getWindowManager().getDefaultDisplay().getWidth();
+		int w =  getWindowManager().getDefaultDisplay().getWidth();
 
 		contactlist = new ArrayList<ContactInfo>();
 		selectedContactlist = new ArrayList<ContactInfo>();
@@ -279,7 +289,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		conctacListView = (ListView) v.findViewById(R.id.contactList);
 		conctacListView.setItemsCanFocus(true);
 		contactAdapter = new ContactAdapter(contactlist,
-				VideoStreamingFragment.this.getActivity());
+				VideoStreamingFragment.this);
 
 		conctacListView.setAdapter(contactAdapter);
 		conctacListView.setOnItemClickListener(new OnItemClickListener() {
@@ -416,10 +426,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	}
 
 	private void SendSMS(List<ContactInfo> Contactlist, String message) {
-		final Context context = getActivity().getApplicationContext();
+		final Context context =  getApplicationContext();
 		String SENT_SMS_ACTION = "SENT_SMS_ACTION";
 		Intent sentIntent = new Intent(SENT_SMS_ACTION);
-		PendingIntent sentPI = PendingIntent.getBroadcast(getActivity()
+		PendingIntent sentPI = PendingIntent.getBroadcast(this
 				.getApplicationContext(), 0, sentIntent, 0);
 		// register the Broadcast Receivers
 		context.registerReceiver(new BroadcastReceiver() {
@@ -446,7 +456,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		// // create the deilverIntent parameter
 		// Intent deliverIntent = new Intent(DELIVERED_SMS_ACTION);
 		// PendingIntent deliverPI =
-		// PendingIntent.getBroadcast(getActivity().context, 0,
+		// PendingIntent.getBroadcast( context, 0,
 		// deliverIntent, 0);
 		// context.registerReceiver(new BroadcastReceiver() {
 		// @Override
@@ -472,11 +482,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	@SuppressLint("SetJavaScriptEnabled")
 	protected void popupComment() {
 		// TODO Auto-generated method stub
-		final View v = getActivity().getLayoutInflater().inflate(
+		final View v =  getLayoutInflater().inflate(
 				R.layout.pop_comment1, null, false);
-		int h = getActivity().getWindowManager().getDefaultDisplay()
+		int h =  getWindowManager().getDefaultDisplay()
 				.getHeight();
-		int w = getActivity().getWindowManager().getDefaultDisplay().getWidth();
+		int w =  getWindowManager().getDefaultDisplay().getWidth();
 
 		popComment = new PopupWindow(v, w - 10, 3 * h / 4);
 		popComment.setAnimationStyle(R.style.MyDialogStyleBottom);
@@ -785,10 +795,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		// TODO Auto-generated method stub
 		super.onConfigurationChanged(newConfig);
 		if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-			// 什么都不用写
+			// nothing to do
 
 		} else {
-			// 什么都不用写
+			// nothing to do
 		}
 	}
 

@@ -29,7 +29,7 @@ import org.videolan.vlc.audio.AudioServiceController;
 import org.videolan.vlc.audio.RepeatType;
 import org.videolan.vlc.gui.CommonDialogs;
 import org.videolan.vlc.gui.CommonDialogs.MenuType;
-import org.videolan.vlc.gui.MainActivity;
+import org.videolan.vlc.gui.VLCMainActivity;
 import org.videolan.vlc.gui.audio.widget.CoverMediaSwitcher;
 import org.videolan.vlc.gui.audio.widget.HeaderMediaSwitcher;
 import org.videolan.vlc.interfaces.IAudioPlayer;
@@ -301,7 +301,7 @@ public class AudioPlayer extends Fragment implements IAudioPlayer {
      */
     public static void start(Context context) {
         Intent intent = new Intent();
-        intent.setAction(MainActivity.ACTION_SHOW_PLAYER);
+        intent.setAction(VLCMainActivity.ACTION_SHOW_PLAYER);
         context.getApplicationContext().sendBroadcast(intent);
     }
 
@@ -486,7 +486,7 @@ public class AudioPlayer extends Fragment implements IAudioPlayer {
     }
 
     public void hide() {
-        MainActivity activity = (MainActivity)getActivity();
+        VLCMainActivity activity = (VLCMainActivity)getActivity();
         activity.hideAudioPlayer();
     }
 
@@ -547,7 +547,7 @@ public class AudioPlayer extends Fragment implements IAudioPlayer {
 
         @Override
         public void onTouchClick() {
-            MainActivity activity = (MainActivity)getActivity();
+            VLCMainActivity activity = (VLCMainActivity)getActivity();
             activity.slideUpOrDownAudioPlayer();
         }
     };
@@ -661,13 +661,13 @@ public class AudioPlayer extends Fragment implements IAudioPlayer {
     }
 
     public void showPlaylistTips() {
-        MainActivity activity = (MainActivity)getActivity();
+        VLCMainActivity activity = (VLCMainActivity)getActivity();
         if(activity != null)
             activity.showTipViewIfNeeded(R.layout.audio_playlist_tips, PREF_PLAYLIST_TIPS_SHOWN);
     }
 
     public void showAudioPlayerTips() {
-        MainActivity activity = (MainActivity)getActivity();
+        VLCMainActivity activity = (VLCMainActivity)getActivity();
         if(activity != null)
             activity.showTipViewIfNeeded(R.layout.audio_player_tips, PREF_AUDIOPLAYER_TIPS_SHOWN);
     }

@@ -36,8 +36,7 @@
                     android:layout_height="1dp"
                     android:layout_gravity="center"
                     android:layout_marginLeft="10dp"
-                    android:layout_marginRight="10dp"
-                    android:background="?attr/playlist_item_footer" />
+                    android:layout_marginRight="10dp" />
             </LinearLayout>
 
             <LinearLayout
@@ -65,7 +64,6 @@
                         android:singleLine="true"
                         android:ellipsize="middle"
                         android:text="@string/title"
-                        android:textColor="?attr/list_title"
                         android:textSize="16sp" />
 
                     <TextView
@@ -78,7 +76,6 @@
                         android:singleLine="true"
                         android:ellipsize="middle"
                         android:text="@string/artist"
-                        android:textColor="?attr/list_subtitle"
                         android:textSize="11sp" />
                 </LinearLayout>
 
@@ -87,8 +84,7 @@
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
                     android:layout_marginBottom="8dp"
-                    android:layout_marginTop="8dp"
-                    android:background="?attr/playlist_item_footer" />
+                    android:layout_marginTop="8dp"/>
 
                 <ImageButton
                     android:id="@+id/move"
@@ -98,8 +94,7 @@
                     android:layout_marginLeft="5dp"
                     android:layout_marginRight="5dp"
                     android:background="#00000000"
-                    android:scaleType="fitXY"
-                    android:src="?attr/ic_move_media" />
+                    android:scaleType="fitXY"/>
             </LinearLayout>
         </LinearLayout>
 
@@ -114,7 +109,6 @@
         android:layout_height="1dp"
         android:layout_gravity="center"
         android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:background="?attr/playlist_item_footer" />
+        android:layout_marginRight="10dp" />
 
 </LinearLayout>

@@ -114,10 +114,10 @@ public class AudioPlaylistAdapter extends ArrayAdapter<Media> {
         final View itemView = v;
 
         holder.title.setText(title);
-        ColorStateList titleColor = v.getResources().getColorStateList(mCurrentIndex == position
-                ? Util.getResourceFromAttribute(mContext, R.attr.list_title_last)
-                : Util.getResourceFromAttribute(mContext, R.attr.list_title));
-        holder.title.setTextColor(titleColor);
+//        ColorStateList titleColor = v.getResources().getColorStateList(mCurrentIndex == position
+//                ? Util.getResourceFromAttribute(mContext, R.attr.list_title_last)
+//                : Util.getResourceFromAttribute(mContext, R.attr.list_title));
+//        holder.title.setTextColor(titleColor);
         holder.artist.setText(artist);
         holder.position = position;
 

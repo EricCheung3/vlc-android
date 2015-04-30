@@ -183,9 +183,9 @@ public class VideoListAdapter extends ArrayAdapter<Media>
         holder.thumbnail.setImageBitmap(thumbnail);
 
         /* Color state */
-        ColorStateList titleColor = v.getResources().getColorStateList(
-                Util.getResourceFromAttribute(mContext, R.attr.list_title));
-        holder.title.setTextColor(titleColor);
+//        ColorStateList titleColor = v.getResources().getColorStateList(
+//                Util.getResourceFromAttribute(mContext, R.attr.list_title));
+//        holder.title.setTextColor(titleColor);
 
         if (media instanceof MediaGroup)
             fillGroupView(holder, media);

@@ -29,32 +29,6 @@
                 android:layout_height="0dp"
                 android:layout_weight="1" />
 
-            <RelativeLayout
-                android:id="@+id/info_layout"
-                android:layout_width="fill_parent"
-                android:layout_height="20dp"
-                android:visibility="gone" >
-
-                <ProgressBar
-                    android:id="@+id/info_progress"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
-                    android:progressDrawable="@drawable/progress" />
-
-                <TextView
-                    android:id="@+id/info_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dip"
-                    android:layout_marginRight="5dip"
-                    android:shadowColor="#CC000000"
-                    android:shadowDx="1"
-                    android:shadowDy="1"
-                    android:shadowRadius="1.5"
-                    android:singleLine="true"
-                    android:textColor="#FFFFFFFF" />
-            </RelativeLayout>
 
             <View
                 android:id="@+id/audio_player_filling"
@@ -62,7 +36,7 @@
                 android:layout_height="60dp"
                 android:visibility="gone" />
         </org.videolan.vlc.widget.ContentLinearLayout>
-
+ <!-- need to change some properties -->
         <FrameLayout
             android:id="@+id/audio_player"
             android:layout_width="fill_parent"
@@ -70,6 +44,7 @@
     </org.videolan.vlc.widget.SlidingPaneLayout>
 
     <!-- The navigation drawer  -->
+    <!-- need to change some properties -->
 	<include layout="@layout/sidebar"/> 
 
 </android.support.v4.widget.DrawerLayout>

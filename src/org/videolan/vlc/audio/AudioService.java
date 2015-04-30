@@ -48,7 +48,7 @@ import org.videolan.vlc.MediaDatabase;
 import org.videolan.vlc.R;
 import org.videolan.vlc.RemoteControlClientReceiver;
 import org.videolan.vlc.VLCApplication;
-import org.videolan.vlc.gui.MainActivity;
+import org.videolan.vlc.gui.VLCMainActivity;
 import org.videolan.vlc.gui.audio.AudioUtil;
 import org.videolan.vlc.gui.video.VideoPlayerActivity;
 import org.videolan.vlc.interfaces.IAudioService;
@@ -367,7 +367,7 @@ public class AudioService extends Service {
              * Launch the activity if needed
              */
             if (action.startsWith(ACTION_REMOTE_GENERIC) && !mLibVLC.isPlaying() && !hasCurrentMedia()) {
-                Intent iVlc = new Intent(context, MainActivity.class);
+                Intent iVlc = new Intent(context, VLCMainActivity.class);
                 iVlc.putExtra(START_FROM_NOTIFICATION, true);
                 iVlc.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 context.startActivity(iVlc);
@@ -715,8 +715,8 @@ public class AudioService extends Service {
                 .setAutoCancel(false)
                 .setOngoing(true);
 
-            Intent notificationIntent = new Intent(this, MainActivity.class);
-            notificationIntent.setAction(MainActivity.ACTION_SHOW_PLAYER);
+            Intent notificationIntent = new Intent(this, VLCMainActivity.class);
+            notificationIntent.setAction(VLCMainActivity.ACTION_SHOW_PLAYER);
             notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             notificationIntent.putExtra(START_FROM_NOTIFICATION, true);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);

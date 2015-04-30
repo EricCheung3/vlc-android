@@ -12,7 +12,6 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:background="?attr/playlist_item_drag_shadow"
         android:orientation="horizontal"
         android:paddingLeft="10dp" >
 
@@ -31,7 +30,6 @@
                 android:layout_marginRight="5dip"
                 android:layout_marginTop="5dip"
                 android:text="@string/title"
-                android:textColor="?attr/list_title"
                 android:textSize="16sp" />
 
             <TextView
@@ -42,7 +40,6 @@
                 android:layout_marginLeft="5dip"
                 android:layout_marginRight="5dip"
                 android:text="@string/artist"
-                android:textColor="?attr/list_subtitle"
                 android:textSize="11sp" />
         </LinearLayout>
 
@@ -51,8 +48,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_marginBottom="8dp"
-            android:layout_marginTop="8dp"
-            android:background="?attr/playlist_item_footer" />
+            android:layout_marginTop="8dp" />
 
         <ImageButton
             android:id="@+id/move"

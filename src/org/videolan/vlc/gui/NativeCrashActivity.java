@@ -48,7 +48,7 @@ public class NativeCrashActivity extends Activity {
             @Override
             public void onClick(View v) {
                 android.os.Process.killProcess(getIntent().getExtras().getInt("PID"));
-                Intent i = new Intent(NativeCrashActivity.this, MainActivity.class);
+                Intent i = new Intent(NativeCrashActivity.this, VLCMainActivity.class);
                 i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
                 finish();
