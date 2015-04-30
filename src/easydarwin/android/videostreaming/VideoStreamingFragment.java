@@ -62,10 +62,15 @@ import org.jivesoftware.smackx.provider.VCardProvider;
 import org.jivesoftware.smackx.provider.XHTMLExtensionProvider;
 import org.jivesoftware.smackx.search.UserSearch;
 import org.videolan.vlc.R;
+import org.videolan.vlc.VLCCallbackTask;
+import org.videolan.vlc.audio.AudioServiceController;
+import org.videolan.vlc.gui.VLCMainActivity;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -110,6 +115,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		RtspClient.Callback, android.view.SurfaceHolder.Callback,
 		OnClickListener {
 
+	
+	public static String to = "admin@myria";
+	
 	private static final int REQUEST_SETTING = 1000;
 	// current system info msg
 	private static final int msgKey1 = 1;
@@ -148,7 +156,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	private XMPPConnection connection;
 	private String streaminglink = "rtsp://129.128.184.46:8554/";
 	private String curDateTime;
-	private String to = "admin@myria";
+
 	/** draw a circle when touch the screen */
 	private PaintView paintView;
 	 
@@ -169,7 +177,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		preferences = PreferenceManager.getDefaultSharedPreferences(faActivity);
 
-		preferences.registerOnSharedPreferenceChangeListener(spcl);
+		
 		// ConnectivityManager cm = (ConnectivityManager)
 		// getSystemService(CONNECTIVITY_SERVICE);
 		// NetworkInfo info = cm.getActiveNetworkInfo();
@@ -202,7 +210,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					Integer.parseInt(mPort), mVideoName));
 			
 		}
-
+//		preferences.registerOnSharedPreferenceChangeListener(spcl);
 
 		/** TODO================================================================ */
 //		connection = GetConnection(username, password);
@@ -496,35 +504,35 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		};
 	}
 
-	public class ReceiveMessageThread extends Thread {
-		@Override
-		public void run() {
-			do {
-				// Thread.sleep(1000);
-				android.os.Message msg = new android.os.Message();
-				msg.what = 2;
-				mHandler.sendMessage(msg);
-			} while (messageFlag);
-		}
-
-		@SuppressLint({ "HandlerLeak", "SimpleDateFormat" })
-		private Handler mHandler = new Handler() {
-			@Override
-			public void handleMessage(android.os.Message msg) {
-				super.handleMessage(msg);
-				switch (msg.what) {
-				case 2:
-					// get message listener
-					ReceiveMsgListenerConnection(connection);
-					Log.i("ReceiveMessageThread", connection.getHost());
-					break;
-
-				default:
-					break;
-				}
-			}
-		};
-	}
+//	public class ReceiveMessageThread extends Thread {
+//		@Override
+//		public void run() {
+//			do {
+//				// Thread.sleep(1000);
+//				android.os.Message msg = new android.os.Message();
+//				msg.what = 2;
+//				mHandler.sendMessage(msg);
+//			} while (messageFlag);
+//		}
+//
+//		@SuppressLint({ "HandlerLeak", "SimpleDateFormat" })
+//		private Handler mHandler = new Handler() {
+//			@Override
+//			public void handleMessage(android.os.Message msg) {
+//				super.handleMessage(msg);
+//				switch (msg.what) {
+//				case 2:
+//					// get message listener
+//					ReceiveMsgListenerConnection(connection);
+//					Log.i("ReceiveMessageThread", connection.getHost());
+//					break;
+//
+//				default:
+//					break;
+//				}
+//			}
+//		};
+//	}
 
 	private ArrayList<String> messages = new ArrayList<String>();
 	private Handler mHandler = new Handler();
@@ -728,10 +736,19 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		btn_Send = (Button) v.findViewById(R.id.btn_play_streaming);
 		btn_Send.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				// DO PLAYING
-				
+				/** DO PLAYING */
+                /* Start this in a new thread as to not block the UI thread */
+                VLCCallbackTask task = new VLCCallbackTask(faActivity){
+                    @Override
+                    public void run() {
+                      AudioServiceController audioServiceController = AudioServiceController.getInstance();
+                      // use audio as default player...
+                      audioServiceController.load(streaminglink, false);
+                    }
+                };
+                task.execute();
+            
 				popStreamingLink.dismiss();
-				System.out.println("playiiiiiiiiiiiiiiiiiii");
 			}
 		});
 		Button btn_cancel = (Button) v.findViewById(R.id.btn_cancle);
@@ -742,6 +759,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			}
 		});
 	}
+
 
 	@Override
 	public void onDestroy() {

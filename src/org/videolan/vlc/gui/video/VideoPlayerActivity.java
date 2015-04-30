@@ -68,6 +68,7 @@ import org.videolan.vlc.util.Strings;
 import org.videolan.vlc.util.VLCInstance;
 import org.videolan.vlc.util.WeakHandler;
 
+import easydarwin.android.videostreaming.VideoStreamingFragment;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -261,7 +262,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private boolean mIsNavMenu = false;
     
     /**Send message while video is playing*/
-	private String to = "admin@myria";
+	//private String to = "admin@myria";
     private EditText textMessage;
     private Button btnSendMessage;
     
@@ -475,8 +476,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
 		String text = textMessage.getText().toString();
 		if(!text.equals("")&&text!=null){
-			Log.i("XMPPChatDemoActivity", "Sending text " + text + " to " + to);
-			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(to, org.jivesoftware.smack.packet.Message.Type.chat);
+			Log.i("XMPPChatDemoActivity", "Sending text " + text + " to-VideoStreamingFragment-- " + VideoStreamingFragment.to);
+			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(VideoStreamingFragment.to, org.jivesoftware.smack.packet.Message.Type.chat);
 			msg.setBody(text);
 			if (connection != null) {
 				connection.sendPacket(msg);
@@ -526,7 +527,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 			return connection;
 		}
 	}
-
+//待测试 （收信息when video is playing）
+	private Handler mHandler2 = new Handler();
 	public void ReceiveMsgListenerConnection(XMPPConnection connection) {
 		this.connection = connection;
 		if (connection != null) {
@@ -544,7 +546,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
 						final String msg = message.getBody().toString();
 						// Add the incoming message to the list view
-						mHandler.post(new Runnable() {
+						mHandler2.post(new Runnable() {
 							public void run() {
 								// notification or chat...
 								Toast.makeText(getApplicationContext(),
