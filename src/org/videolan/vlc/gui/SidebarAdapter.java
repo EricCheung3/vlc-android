@@ -25,16 +25,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.easydarwin.android.camera.VideoStreamingFragment;
 import org.videolan.vlc.R;
 import org.videolan.vlc.VLCApplication;
 import org.videolan.vlc.gui.audio.AudioBrowserFragment;
 import org.videolan.vlc.gui.video.VideoGridFragment;
-import org.videolan.vlc.util.Util;
 
 import android.content.Context;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -42,6 +39,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+import easydarwin.android.videostreaming.VideoStreamingFragment;
 
 public class SidebarAdapter extends BaseAdapter {
     public final static String TAG = "VLC/SidebarAdapter";
@@ -67,10 +65,10 @@ public class SidebarAdapter extends BaseAdapter {
 
     static {
         SidebarEntry entries2[] = {
-//        	new SidebarEntry( "videoStreaming", R.string.videoStreaming, R.attr.ic_menu_video ),
+        	new SidebarEntry( "videoStreaming", R.string.videoStreaming, R.attr.ic_menu_video ),
             new SidebarEntry( "video", R.string.video, R.attr.ic_menu_video ),
             new SidebarEntry( "audio", R.string.audio, R.attr.ic_menu_audio ),
-            new SidebarEntry( "directories", R.string.directories, R.attr.ic_menu_folder ),
+//            new SidebarEntry( "directories", R.string.directories, R.attr.ic_menu_folder ),
             new SidebarEntry( "history", R.string.history, R.attr.ic_menu_history ),
             //new SidebarEntry( "bookmarks", R.string.bookmarks, R.drawable.ic_bookmarks ),
             //new SidebarEntry( "playlists", R.string.playlists, R.drawable.icon ),
@@ -150,10 +148,9 @@ public class SidebarAdapter extends BaseAdapter {
             f = new DirectoryViewFragment();
         } else if(id.equals("history")) {
             f = new HistoryFragment();
+        } else if(id.equals("videoStreaming")) {
+            f = new VideoStreamingFragment();
         }
-//        } else if(id.equals("videoStreaming")) {
-//            f = new VideoStreamingFragment();
-//        }
         else {
             mCurrentFragmentId = prevFragmentId; // Restore the current fragment id.
             throw new IllegalArgumentException("Wrong fragment id.");

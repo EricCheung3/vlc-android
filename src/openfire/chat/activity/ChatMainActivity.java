@@ -104,10 +104,10 @@ public class ChatMainActivity extends Activity {
 //		listview.setAdapter(adapter);
 		MessageAdapter();
 		
-		Button send = (Button) this.findViewById(R.id.sendBtn);
+		Button send = (Button) this.findViewById(R.id.btn_send_message);
 		send.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				String to = "user11@myria";
+				String to = "admin@myria";
 				String text = textMessage.getText().toString();
 				Log.i("XMPPChatDemoActivity", "Sending text " + text + " to " + to);
 				Message msg = new Message(to, Message.Type.chat);
@@ -126,7 +126,7 @@ public class ChatMainActivity extends Activity {
 		});
 
 		// popup all the friends
-		//popupContactList(username, password);
+		popupContactList(username, password);
 		connection = GetConnection(username, password);
 		// Set the status to available
 		Presence presence = new Presence(Presence.Type.available);
@@ -154,7 +154,7 @@ public class ChatMainActivity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				// TODO Auto-generated method stub
-				if (createMultiUserRoom(connection, "room2", selectedListMap)) {
+				if (createMultiUserRoom(connection, "room2"/*, selectedListMap*/)) {
 					Log.i("createMultiUserRoom", "success");
 				} else
 					Log.i("createMultiUserRoom", "not success");
@@ -194,7 +194,7 @@ public class ChatMainActivity extends Activity {
 
 		friendlistView = (ListView) v.findViewById(R.id.friendlist);
 		friendlistView.setItemsCanFocus(true);
-		friendsAdapter = new FriendsAdapter(username, password, this, listMap);
+		//friendsAdapter = new FriendsAdapter(username, password, this, listMap);
 
 		friendlistView.setAdapter(friendsAdapter);
 		friendlistView.setOnItemClickListener(new OnItemClickListener() {
@@ -373,7 +373,7 @@ public class ChatMainActivity extends Activity {
 
 	// create a multi-user chat room & invite them to join
 	public boolean createMultiUserRoom(XMPPConnection connection,
-			String roomName, ArrayList<String> friendlist) {
+			String roomName/*, ArrayList<String> friendlist*/) {
 
 		// Get the MultiUserChatManager
 		// Create a MultiUserChat using an XMPPConnection for a room
@@ -404,7 +404,7 @@ public class ChatMainActivity extends Activity {
 			// Create a MultiUserChat using an XMPPConnection for a room
 
 			muc.invite("user11@myria", "come baby");
-
+			muc.join("user11@myria");
 			return true;
 		} catch (XMPPException e) {
 			e.printStackTrace();

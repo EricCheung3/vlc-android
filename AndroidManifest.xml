@@ -63,23 +63,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
- 		<activity
-            android:name="org.videolan.vlc.gui.VLCMainActivity"/>
-        <activity android:name="org.easydarwin.android.camera.NEWMainActivity" />
-        <activity android:name="org.easydarwin.android.camera.VideoStreamingFragment" />
+
         <activity android:name="openfire.chat.activity.RegisterActivity" />
         <activity android:name="openfire.chat.activity.ChatMainActivity" />
         <activity
-            android:name="org.easydarwin.android.camera.SettingsActivity"
+            android:name="easydarwin.android.videostreaming.SettingsActivity"
             android:label="@string/title_activity_settings"
-            android:parentActivityName="org.easydarwin.android.camera.VideoStreamingFragment" >
+            android:parentActivityName="easydarwin.android.videostreaming.VideoStreamingFragment" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="org.easydarwin.android.camera.VideoStreamingFragment" />
+                android:value="easydarwin.android.videostreaming.VideoStreamingFragment" />
         </activity>
 
-        <service android:name="org.easydarwin.android.camera.CommandService" />
+        <service android:name="easydarwin.android.videostreaming.CommandService" />
 
+        <!-- VLC Part -->
+ 		<activity android:name="org.videolan.vlc.gui.VLCMainActivity"/>
+ 		        
         <activity android:name=".gui.CompatErrorActivity" />
         <activity android:name=".gui.PreferencesActivity" />
         <activity

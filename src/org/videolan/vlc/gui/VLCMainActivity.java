@@ -185,7 +185,7 @@ public class VLCMainActivity extends ActionBarActivity {
         if (enableBlackTheme)
             setTheme(R.style.Theme_VLC_Black);
 
-        View v_main = LayoutInflater.from(this).inflate(R.layout.newmain, null);
+        View v_main = LayoutInflater.from(this).inflate(R.layout.main, null);
         setContentView(v_main);
 
         mSlidingPane = (SlidingPaneLayout) v_main.findViewById(R.id.pane);

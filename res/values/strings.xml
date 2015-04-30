@@ -2,8 +2,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- MediaStreaming..... -->
-    <string name="action_settings">setting</string>
-    
+    <string name="action_settings">setting</string> 
     <string name="options_activity_title">Setting</string>
     <string name="settings1">RTSP Server address and port</string>
     <string name="settings3">Audio Streaming</string>
@@ -21,9 +20,16 @@
     <string name="settings29">Address</string>
     <string name="settings30">RTSP server_address</string>
     <string name="settings31">Port</string>
-    <string name="settings32">RTSP server_port</string>
-    
+    <string name="settings32">RTSP server_port</string> 
     <string name="disconnect_server">disconnect with the server</string>
+    
+    <string name="collapsed">I\'m the collapsed notification.\nCreated at: %s</string>
+     <string name="collapsed_image">A single Android robot waving. Symbolises a collapsed
+        notification.
+    </string>
+    <string name="custom_notification">I\'m a custom notification.</string>
+    
+    
         
 
     <!-- Strings related to Settings -->

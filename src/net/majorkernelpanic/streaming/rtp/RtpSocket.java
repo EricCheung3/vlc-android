@@ -369,7 +369,10 @@ public class RtpSocket implements Runnable {
 					mBufferOut = 0;
 				mBufferRequested.release();
 			}
-		} catch (Exception e) {
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			Log.e(TAG, "current thread is interruptedtryAcquire throws InterruptedException.");
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		mThread = null;

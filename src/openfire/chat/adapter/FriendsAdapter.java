@@ -5,16 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import openfire.chat.service.UserServiceImpl;
-
-import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.Roster;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
 import org.videolan.vlc.R;
 
 import android.app.Activity;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -23,18 +16,18 @@ import android.widget.TextView;
 
 public class FriendsAdapter extends BaseAdapter {
 
-	private static XMPPConnection connection = null;
+//	private static XMPPConnection connection = null;
 	
 	private Activity context;
 	private List<Map<String,String>> listMap = new ArrayList<Map<String,String>>();
     private static HashMap<Integer,Boolean> isSelected = new HashMap<Integer,Boolean>();
     
-	public FriendsAdapter(String username,String passwd,Activity context, List<Map<String,String>> listMap){
+	public FriendsAdapter(Activity context, List<Map<String,String>> listMap){
 		this.context = context;
 		this.listMap = listMap;
-		getFriendsList(username,passwd);
+		//listMap = getFriendsList(username,passwd);
 	}
-	
+	/*
 	private List<Map<String,String>> getFriendsList(String username,String passwd){
 		try {
 			if (null == connection || !connection.isAuthenticated()) {
@@ -56,8 +49,7 @@ public class FriendsAdapter extends BaseAdapter {
 					Map<String,String> map = new HashMap<String,String>();
 					
 					String[] s = entry.toString().split(" ");
-					Log.i("s[0]", s[0]);
-					Log.i("s[1]", s[1]);
+
 					if(s.length==2){
 						map.put("name", s[0].substring(0, s[0].length()-1));
 						map.put("username", s[1]);
@@ -76,6 +68,7 @@ public class FriendsAdapter extends BaseAdapter {
 		}
 		return null;
 	}
+	*/
 	@Override
 	public int getCount() {
 		return listMap.size();
