@@ -542,7 +542,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 			return connection;
 		}
 	}
-	//待测试 （收信息when video is playing）
+
 	private Handler mHandler2 = new Handler();
 	public void ReceiveMsgListenerConnection(XMPPConnection connection) {
 		this.connection = connection;

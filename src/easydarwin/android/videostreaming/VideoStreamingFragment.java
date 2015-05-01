@@ -622,7 +622,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 							Message msg = new Message(selectedListMap.get(i),
 									Message.Type.chat);
 							msg.setBody(streaminglink);
-							if (connection != null) {
+							if (connection != null && connection.isConnected()) {
+
 								connection.sendPacket(msg);
 								messages.add(selectedListMap.get(i).split("@")[0]
 										+ ":");
@@ -631,6 +632,18 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 								Toast.makeText(faActivity.getApplicationContext(),
 										streaminglink, Toast.LENGTH_SHORT)
 										.show();
+							}else{
+								try {
+									connection.connect();
+//									connection.login(username, password);
+									connection.sendPacket(msg);
+
+									Toast.makeText(faActivity.getApplicationContext(),
+											streaminglink, Toast.LENGTH_SHORT)
+											.show();
+								} catch (XMPPException e) {
+									e.printStackTrace();
+								}
 							}
 						}
 					}
