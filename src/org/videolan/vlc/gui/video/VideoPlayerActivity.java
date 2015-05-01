@@ -68,7 +68,6 @@ import org.videolan.vlc.util.Strings;
 import org.videolan.vlc.util.VLCInstance;
 import org.videolan.vlc.util.WeakHandler;
 
-import easydarwin.android.videostreaming.VideoStreamingFragment;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -127,9 +126,11 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.TextView.OnEditorActionListener;
 import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
+import easydarwin.android.videostreaming.PaintView;
+import easydarwin.android.videostreaming.VideoStreamingFragment;
 
 public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     public final static String TAG = "VLC/VideoPlayerActivity";
@@ -262,10 +263,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private boolean mIsNavMenu = false;
     
     /**Send message while video is playing*/
-	//private String to = "admin@myria";
+    UserServiceImpl serveice;
+	private XMPPConnection connection;
     private EditText textMessage;
     private Button btnSendMessage;
     
+    /** draw a circle when touch the screen */
+	private PaintView paintView;
+	
     @Override
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     protected void onCreate(Bundle savedInstanceState) {
@@ -386,29 +391,36 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             mSubtitlesSurfaceHolder.addCallback(mSubtitlesSurfaceCallback);
         }
 
-        /**TODO===========================================*/
+        /**TODO: start a new thread for chatting,
+         * and add a PaintView for touch screen*/  
 		new GetXMPPConnection().execute();
-		
+
 		textMessage = (EditText) findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button)findViewById(R.id.btn_send_message);
 		// EditText: set android keyboard enter button as send button
-				textMessage.setOnEditorActionListener(new OnEditorActionListener() {
-				    
-				    @Override
-				    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-				    	SendMessage();
-				    	return true;
-				    }
-				});
+		textMessage.setOnEditorActionListener(new OnEditorActionListener() {
+		    
+		    @Override
+		    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+		    	SendMessage();
+		    	return true;
+		    }
+		});
 		btnSendMessage.setOnClickListener(new OnClickListener(){
 
 			@Override
 			public void onClick(View arg0) {
 				SendMessage();
 				}
-			
 		});
-        
+
+		
+		/* draw a circle when users touch the screen */
+    	paintView = (PaintView) findViewById(R.id.drawView);		
+    	paintView.setVisibility(View.VISIBLE);
+    	paintView.setFocusable(true);
+    	paintView.setOnTouchListener(paintView);
+    	
         mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
         mSeekbar.setOnSeekBarChangeListener(mSeekListener);
 
@@ -472,6 +484,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         updateNavStatus();
     }
 
+    /* send message */
     private void SendMessage(){
 
 		String text = textMessage.getText().toString();
@@ -492,11 +505,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		}	    	
     
     }
-	private XMPPConnection connection;
+
 	@SuppressWarnings("rawtypes")
 	private class GetXMPPConnection extends AsyncTask {
 		@Override
 		protected XMPPConnection doInBackground(Object... urls) {
+			
 			try {
 				if (null == connection || !connection.isAuthenticated()) {
 					XMPPConnection.DEBUG_ENABLED = true;
@@ -510,7 +524,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					config.setSASLAuthenticationEnabled(true);
 					connection = new XMPPConnection(config);
 					connection.connect();
-//					connection.login(username, password);
+					Log.i("username", VideoStreamingFragment.username);
+					connection.login(VideoStreamingFragment.username, VideoStreamingFragment.password);
 					// Set the status to available
 					Presence presence = new Presence(Presence.Type.available);
 					connection.sendPacket(presence);
@@ -527,7 +542,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 			return connection;
 		}
 	}
-//待测试 （收信息when video is playing）
+	//待测试 （收信息when video is playing）
 	private Handler mHandler2 = new Handler();
 	public void ReceiveMsgListenerConnection(XMPPConnection connection) {
 		this.connection = connection;
@@ -541,7 +556,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					if (message.getBody() != null) {
 						final String[] fromName = StringUtils.parseBareAddress(
 								message.getFrom()).split("@");
-						Log.i("XMPPChatDemoActivity", "Text Recieved "
+						Log.i("XMPPChatDemoActivity", "VideoPlayer Text Recieved "
 								+ message.getBody() + " from " + fromName[0]);
 
 						final String msg = message.getBody().toString();

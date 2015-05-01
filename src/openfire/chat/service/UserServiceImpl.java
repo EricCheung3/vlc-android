@@ -27,6 +27,7 @@ public class UserServiceImpl implements UserService {
 	public static String SERVER_NAME = "myria";// server name
 	private static XMPPConnection connection = null;
 
+	
 	@Override
 	public XMPPConnection userLogin(String username, String password)
 			throws Exception {

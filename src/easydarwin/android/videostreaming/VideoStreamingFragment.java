@@ -64,16 +64,12 @@ import org.jivesoftware.smackx.search.UserSearch;
 import org.videolan.vlc.R;
 import org.videolan.vlc.VLCCallbackTask;
 import org.videolan.vlc.audio.AudioServiceController;
-import org.videolan.vlc.gui.VLCMainActivity;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
@@ -92,7 +88,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -116,7 +111,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		OnClickListener {
 
 	
-	public static String to = "admin@myria";
+	public static final String to = "tiger@myria";
 	
 	private static final int REQUEST_SETTING = 1000;
 	// current system info msg
@@ -148,8 +143,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	private SharedPreferences preferences;
 
 	private Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+)");
-	private String username;
-	private String password;
+	public static String username;
+	public static String password;
 	private String entries;
 	private List<Map<String, String>> friendList;
 	private boolean messageFlag = true;
@@ -160,7 +155,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	/** draw a circle when touch the screen */
 	private PaintView paintView;
 	 
-	FragmentActivity faActivity;
+	private FragmentActivity faActivity;
+	
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -210,10 +206,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					Integer.parseInt(mPort), mVideoName));
 			
 		}
-//		preferences.registerOnSharedPreferenceChangeListener(spcl);
 
 		/** TODO================================================================ */
-//		connection = GetConnection(username, password);
 		new GetXMPPConnection().execute();
 		// Set the status to available
 //		Presence presence = new Presence(Presence.Type.available);
@@ -235,7 +229,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		    }
 		});
 		
-		
 		return v;
 	}
 
@@ -248,7 +241,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		ipView = (TextView) v.findViewById(R.id.main_text_description);
 		mTime = (TextView) v.findViewById(R.id.timeDisplay);
 		// draw paint View
-		paintView = (PaintView)v.findViewById(R.id.drawView);
+		paintView = (PaintView)v.findViewById(R.id.drawView);		
 		
 		mSurfaceView = (net.majorkernelpanic.streaming.gl.SurfaceView) v.findViewById(R.id.surface);
 		mSurfaceView.setAspectRatioMode(SurfaceView.ASPECT_RATIO_PREVIEW);
@@ -257,11 +250,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);// needed
 																		// for
 																		// sdk<11
-
 		btnSelectContact = (Button) v.findViewById(R.id.btnPlay);
 		btnOption = (Button) v.findViewById(R.id.btnOptions);
 		btnStop = (Button) v.findViewById(R.id.btnStop);
 
+		//get username & password
 		username = faActivity.getIntent().getStringExtra("username");
 		password = faActivity.getIntent().getStringExtra("password");
 		entries = faActivity.getIntent().getStringExtra("entries");
@@ -364,7 +357,13 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		preferences = PreferenceManager.getDefaultSharedPreferences(faActivity);
 		
 		/**draw a circle when user touch the screen*/
+		paintView.setVisibility(View.VISIBLE);
+		paintView.setFocusable(true);
 		paintView.setOnTouchListener(paintView);
+		
+		/** receive message listener*/
+//		ReceiveMsgListenerConnection(connection);
+		
 		
 		new AsyncTask<Void, Void, Integer>() {
 			@Override
@@ -455,11 +454,12 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		if (mSession != null) {
 			mSession.release();
-//			mSession.stop();
 			mSession = null;
 		}
 
 		paintView.setVisibility(View.GONE);
+//		paintView.setVisibility(View.INVISIBLE);
+		
 		// mSurfaceView.getHolder().removeCallback(MainActivity.this);
 		// mSurfaceView.setVisibility(View.GONE);
 		// mSurfaceView.setVisibility(View.VISIBLE);
@@ -548,19 +548,15 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	private ArrayList<String> selectedListMap = new ArrayList<String>();
 
 	//
-
 	private void MessageAdapter() {
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(faActivity,
 				R.layout.listitem, messages);
 		listview.setAdapter(adapter);
 	}
 
-	// Select contact function
-
+	// Select Fiends to Share the video
 	@SuppressWarnings("deprecation")
 	private void popupContactList(String entries) {
-
-		// connection = GetConnection(username, password);
 
 		final View v = faActivity.getLayoutInflater().inflate(R.layout.friendlist, null,
 				false);
@@ -627,7 +623,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 									Message.Type.chat);
 							msg.setBody(streaminglink);
 							if (connection != null) {
-
 								connection.sendPacket(msg);
 								messages.add(selectedListMap.get(i).split("@")[0]
 										+ ":");
@@ -649,30 +644,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			}
 		});
 	}
-
-//	private XMPPConnection GetConnection(String username, String passwd) {
-//		try {
-//			if (null == connection || !connection.isAuthenticated()) {
-//				XMPPConnection.DEBUG_ENABLED = true;
-//
-//				ConnectionConfiguration config = new ConnectionConfiguration(
-//						UserServiceImpl.SERVER_HOST,
-//						UserServiceImpl.SERVER_PORT,
-//						UserServiceImpl.SERVER_NAME);
-//				config.setReconnectionAllowed(true);
-//				config.setSendPresence(true);
-//				config.setSASLAuthenticationEnabled(true);
-//				connection = new XMPPConnection(config);
-//				connection.connect();
-//				connection.login(username, passwd);
-//
-//				return connection;
-//			}
-//		} catch (XMPPException xe) {
-//			Log.e("XMPPChatDemoActivity", xe.toString());
-//		}
-//		return null;
-//	}
 
 	public void ReceiveMsgListenerConnection(XMPPConnection connection) {
 		this.connection = connection;
@@ -821,7 +792,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			// Send the completed form (with default values) to the server to
 			// configure the room
 			muc.sendConfigurationForm(submitForm);
-			// Create a MultiUserChat using an XMPPConnection for a room
 
 			muc.invite("user1@myria", "come baby");
 
@@ -833,20 +803,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		return false;
 	}
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
-		// int id = item.getItemId();
-		// if (id == R.id.action_settings) {
-		// startActivityForResult(new Intent(this,
-		// SettingsActivity.class),
-		// REQUEST_SETTING);
-		// return true;
-		// }
-		return super.onOptionsItemSelected(item);
-	}
 
 	private void setStateDescription(byte state) {
 
@@ -870,10 +826,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	@Override
 	public void onBitrareUpdate(long bitrate) {
 		if (mClient != null) {
-			if (bitrate / 1000 > 300)
-				ipView.setText("	" + bitrate / 1000 + " kbps");
-			else
-				ipView.setText(" The current network is not stable ");
+			if (bitrate / 1000 < 250)
+//				ipView.setText("	" + bitrate / 1000 + " kbps");
+				ipView.setText(" The current network is not stable !");
 		}
 	}
 
@@ -997,53 +952,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				// setStateDescription(EasyCameraApp.sState);
 			}
 		} else {
-
 			ipView.setText("Network is unavailable,please open the network and try again");
 		}
 
 	}
-
-	private final OnSharedPreferenceChangeListener spcl = new OnSharedPreferenceChangeListener() {
-
-		public void onSharedPreferenceChanged(SharedPreferences pre, String key) {
-			if (key.equals("p_audio_encoder") || key.equals("p_stream_audio")) {
-				audioEncoder = Integer.parseInt(pre.getString(
-						"p_audio_encoder", String.valueOf(audioEncoder)));
-				SessionBuilder.getInstance().setAudioEncoder(audioEncoder);
-				if (!pre.getBoolean("p_stream_audio", true))
-					SessionBuilder.getInstance().setAudioEncoder(0);
-			}
-
-			else if (key.equals("p_stream_video")
-					|| key.equals("p_video_encoder")) {
-				videoEncoder = Integer.parseInt(pre.getString(
-						"p_video_encoder", String.valueOf(videoEncoder)));
-				SessionBuilder.getInstance().setVideoEncoder(videoEncoder);
-				if (!pre.getBoolean("p_stream_video", true))
-					SessionBuilder.getInstance().setVideoEncoder(0);
-
-			} else if (key.equals("video_resolution")) {
-				Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+)");
-				Matcher matcher = pattern.matcher(preferences.getString(
-						"video_resolution", "640x480"));
-				matcher.find();
-				//videoQuality.
-				Log.i("Integer.parseInt(matcher.group(1))",matcher.group(1));
-				videoQuality.resX = Integer.parseInt(matcher.group(1));
-				videoQuality.resY = Integer.parseInt(matcher.group(2));
-			} else if (key.equals("video_framerate")) {
-				videoQuality.framerate = Integer.parseInt(preferences
-						.getString("video_framerate", "15"));
-			} else if (key.equals("video_bitrate")) {
-				videoQuality.bitrate = Integer.parseInt(preferences.getString(
-						"video_bitrate", "300")) * 1000;
-			} else if (key.equals("video_camera")) {
-				SessionBuilder.getInstance().setCamera(
-						Integer.parseInt(preferences.getString("video_camera",
-								"0")));
-			}
-		}
-	};
 
 	public String getDefaultDeviceId() {
 		return Build.MODEL.replaceAll(" ", "_");
@@ -1344,7 +1256,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				e.printStackTrace();
 			}
 
-			return connection;
+			return null;
 		}
 	}
 
