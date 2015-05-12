@@ -8,6 +8,8 @@ import java.util.Map;
 import org.videolan.vlc.R;
 
 import android.app.Activity;
+import android.graphics.Color;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -94,7 +96,11 @@ public class FriendsAdapter extends BaseAdapter {
 		TextView displayname = (TextView) view.findViewById(R.id.friend_displayname);
 		CheckBox check = (CheckBox) view.findViewById(R.id.check_box);
 		
-		
+		if(listMap.get(position).get("status").equals("online")){
+			username.setTextColor(Color.GREEN);
+			Log.i("FriendsAdapter","UserStatus:" +listMap.get(position).get("username"));
+		}else
+			Log.i("FriendsAdapter","UserStatus:" +listMap.get(position).get("status"));
  
 		username.setText(listMap.get(position).get("username"));
 		//check.setChecked(checked);

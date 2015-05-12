@@ -3,6 +3,7 @@ package openfire.chat.service;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import openfire.chat.activity.LoginActivity;
 import openfire.chat.activity.RegisterActivity;
 
 import org.jivesoftware.smack.ConnectionConfiguration;
@@ -25,24 +26,45 @@ public class UserServiceImpl implements UserService {
 	public static final int SERVER_PORT = 5220; //server port
 	public static String SERVER_HOST = "129.128.184.46";// server ip
 	public static String SERVER_NAME = "myria";// server name
-	private static XMPPConnection connection = null;
-
+	private XMPPConnection connection = null;
 	
 	@Override
 	public XMPPConnection userLogin(String username, String password)
 			throws Exception {
 
-		try {
+//		try {
+//			if (null == connection || !connection.isAuthenticated()) {
+//				XMPPConnection.DEBUG_ENABLED = true;
+//
+//				ConnectionConfiguration config = new ConnectionConfiguration(
+//						SERVER_HOST, SERVER_PORT, SERVER_NAME);
+//				config.setReconnectionAllowed(true);
+//				config.setSendPresence(true);
+//				config.setSASLAuthenticationEnabled(true);
+//				connection = new XMPPConnection(config);
+//				if(!connection.isConnected()){
+//					connection.connect();
+//				connection.login(username, password);
+//				}
+//				return connection;
+//			}
+//		} catch (XMPPException xe) {
+//			Log.e("GET CONNECTION", xe.toString());
+//			throw new ServiceException(LoginActivity.SERVER_ERROR);
+//
+//		}
+		if(connection == null )
 			connection = GetConnection();
+		else
+			Log.i("CONNECTION", "null");
+		try {
 			connection.login(username, password);
-			
-			return connection;
 		} catch (XMPPException xe) {
-			Log.e("XMPPChatDemoActivity", "Failed to log in as " + username);
-			Log.e("XMPPChatDemoActivity", xe.toString());
+			Log.e("LOGIN", "Failed to log in as " + username);
+			Log.e("LOGIN", xe.toString());
+			throw new ServiceException(LoginActivity.UNKNOW_ERROR);
 		}
-
-		return null;
+		return connection;
 	}
 
 	public XMPPConnection userRegister(String username, String name, String email, String password,
@@ -72,18 +94,9 @@ public class UserServiceImpl implements UserService {
 
 		Registration reg = new Registration();
 		reg.setType(IQ.Type.SET);
-//		if (null == connection || !connection.isAuthenticated()) {
-//			XMPPConnection.DEBUG_ENABLED = true;
-//
-//			ConnectionConfiguration config = new ConnectionConfiguration(
-//					SERVER_HOST, SERVER_PORT, SERVER_NAME);
-//			config.setReconnectionAllowed(true);
-//			config.setSendPresence(true);
-//			config.setSASLAuthenticationEnabled(true);
-//			connection = new XMPPConnection(config);
-//			connection.connect();
-//		}
-		connection = GetConnection();
+
+		if(connection == null )
+			connection = GetConnection();
 		
 		reg.setTo(connection.getServiceName());
 		reg.setUsername(username);
@@ -106,7 +119,7 @@ public class UserServiceImpl implements UserService {
 		} else if (result.getType() == IQ.Type.ERROR) {
 			if (result.getError().toString().equalsIgnoreCase("conflict(409)")) {
 				throw new ServiceException(
-						RegisterActivity.REGISTER_USERNAME_FAILED);
+						RegisterActivity.USERNAME_EXISTED);
 			} else {
 				throw new ServiceException(RegisterActivity.REGISTER_FAILED);
 			}
@@ -117,25 +130,37 @@ public class UserServiceImpl implements UserService {
 		return null;
 	}
 
-	public XMPPConnection GetConnection(){
+	public XMPPConnection GetConnection() throws ServiceException{
+
+		XMPPConnection.DEBUG_ENABLED = true;
+
+		ConnectionConfiguration config = new ConnectionConfiguration(
+				SERVER_HOST, SERVER_PORT, SERVER_NAME);
+		config.setReconnectionAllowed(true);
+		config.setSendPresence(true);
+		config.setSASLAuthenticationEnabled(true);
+		config.setRosterLoadedAtLogin(true);
+		connection = new XMPPConnection(config);
+		
 		try {
-			if (null == connection || !connection.isAuthenticated()) {
-				XMPPConnection.DEBUG_ENABLED = true;
-
-				ConnectionConfiguration config = new ConnectionConfiguration(
-						SERVER_HOST, SERVER_PORT, SERVER_NAME);
-				config.setReconnectionAllowed(true);
-				config.setSendPresence(true);
-				config.setSASLAuthenticationEnabled(true);
-				connection = new XMPPConnection(config);
-				connection.connect();
-
-				return connection;
-			}
-		} catch (XMPPException xe) {
-			Log.e("XMPPChatDemoActivity", xe.toString());
+			Log.i("GETCONNECTION","connect");
+			connection.connect();
+		} catch (XMPPException e) {
+			e.printStackTrace();
 		}
-		return null;
+		
+//		if (connection ==null || !connection.isAuthenticated()) {
+//			try {
+//				Log.i("GETCONNECTION","connect");
+//				
+//
+//			}catch (XMPPException xe) {
+//				Log.e("GET CONNECTION", xe.toString());
+//				throw new ServiceException(LoginActivity.SERVER_ERROR);
+//			} 
+//			//return connection;
+//		}
+		return connection;
 	}
 	/** check validate of username & email */
 	private boolean validteUsername(String username) {

@@ -3,6 +3,7 @@ package openfire.chat.activity;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import openfire.chat.service.UserService;
 import openfire.chat.service.UserServiceImpl;
 
 import org.jivesoftware.smack.Roster;
+import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.Presence;
 import org.videolan.vlc.R;
@@ -51,6 +53,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 	public static final String LOGIN_FAILED = "Connect time out,check network and login again!";
 	public static final String PASSWORD_IS_WRONG = "password is wrong !";
 	public static final String UNKNOW_ERROR = "unknow error!";
+	public static final String SERVER_ERROR = "remote server error (not start)!";
 	public static final String CONNECT_TIME_OUT = "Connect time out, please check the network!";
 	public static final String REQUEST_TIME_OUT = "Request time out, try again later!!";
 	public static final String HTTP_CONNECTION_REFUSED = "http://... refused, please login later.";
@@ -65,7 +68,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 	private UserService userService = new UserServiceImpl();
 
 	boolean registerFlag;
-	private XMPPConnection connection;
+	public static XMPPConnection connection;
 
 	private PackageInfo info;
 	private String username;
@@ -154,13 +157,14 @@ public class LoginActivity extends Activity implements OnClickListener {
 		mDialog.setTitle("login");
 		mDialog.setMessage("loading......");
 		mDialog.show();
+
 		Thread loginThread = new Thread(new LoginThread());
 		loginThread.start();
 
 	}
 
 	// LoginThread
-	List<Map<String,String>> listMap = new ArrayList<Map<String,String>>();
+//	List<Map<String,String>> listMap = new ArrayList<Map<String,String>>();
 	private class LoginThread implements Runnable {
 		@Override
 		public void run() {
@@ -189,7 +193,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 					editor.putString("PASSWORD", password);
 					editor.commit();
 				}
-				// Set the status to available
+				// Set the status to available (online)
 //				Presence presence = new Presence(Presence.Type.available);
 //				connection.sendPacket(presence);
 /*				
@@ -213,24 +217,28 @@ public class LoginActivity extends Activity implements OnClickListener {
 				}
 				System.out.println(listMap.toString());
 */
-//				Collection<RosterEntry> entries = roster.getEntries();
-//				for (RosterEntry entry : entries) {
-//					Log.i("RosterEntry",
-//							"------"+entry.toString()+"----");
-//					//user4: user4@myria [myFriends]
+//				Roster roster11 = connection.getRoster();
+//				Collection<RosterEntry> entries11 = roster11.getEntries();
+//				for (RosterEntry entry : entries11) {
+//					Presence presence = roster11.getPresence(entry.getUser()); 
+//					//user is online or offline
+//					if(presence.isAvailable() == true){
+//						Log.i("RosterEntry",entry.getUser() + "--online");
+//		             }else
+//		            	 Log.i("RosterEntry",entry.getUser() + "--offline");
+//					Log.i("RosterEntry","------"+entry.toString()+"----");//user4: user4@myria [myFriends]
 //					Log.i("RosterEntry","getUser: " + entry.getUser());//user4@myria
-//					Log.i("RosterEntry","getGroups: " + entry.getGroups().toString());
-//					Log.i("RosterEntry","getName: " + entry.getName());//user4
+//					Log.i("RosterEntry","getGroups: " + entry.getType());
 //				}
 				//Log.i("connection","getUser: " + connection.getUser());//user2@myria/Smack
 
-				Roster roster = connection.getRoster();
-				String entries = roster.getEntries().toString();
-				Log.i("entries",entries);
+//				Roster roster = connection.getRoster();
+//				String entries = roster.getEntries().toString();
+//				Log.i("entries",entries);
 				Intent intent = new Intent();
 				intent.putExtra("username", username);
 				intent.putExtra("password", password);
-				intent.putExtra("entries", entries);
+//				intent.putExtra("entries", entries);
 				intent.setClass(LoginActivity.this, VLCMainActivity.class);
 				startActivity(intent);
 				LoginActivity.this.finish();

@@ -25,6 +25,7 @@ import org.jivesoftware.smackx.Form;
 import org.jivesoftware.smackx.FormField;
 import org.jivesoftware.smackx.GroupChatInvitation;
 import org.jivesoftware.smackx.PrivateDataManager;
+import org.jivesoftware.smackx.bytestreams.socks5.provider.BytestreamsProvider;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.packet.ChatStateExtension;
 import org.jivesoftware.smackx.packet.LastActivity;
@@ -32,12 +33,10 @@ import org.jivesoftware.smackx.packet.OfflineMessageInfo;
 import org.jivesoftware.smackx.packet.OfflineMessageRequest;
 import org.jivesoftware.smackx.packet.SharedGroupsInfo;
 import org.jivesoftware.smackx.provider.AdHocCommandDataProvider;
-import org.jivesoftware.smackx.provider.BytestreamsProvider;
 import org.jivesoftware.smackx.provider.DataFormProvider;
 import org.jivesoftware.smackx.provider.DelayInformationProvider;
 import org.jivesoftware.smackx.provider.DiscoverInfoProvider;
 import org.jivesoftware.smackx.provider.DiscoverItemsProvider;
-import org.jivesoftware.smackx.provider.IBBProviders;
 import org.jivesoftware.smackx.provider.MUCAdminProvider;
 import org.jivesoftware.smackx.provider.MUCOwnerProvider;
 import org.jivesoftware.smackx.provider.MUCUserProvider;
@@ -535,14 +534,14 @@ public class ChatMainActivity extends Activity {
 		pm.addIQProvider("query", "http://jabber.org/protocol/bytestreams",
 				new BytestreamsProvider());
 
-		pm.addIQProvider("open", "http://jabber.org/protocol/ibb",
-				new IBBProviders.Open());
-
-		pm.addIQProvider("close", "http://jabber.org/protocol/ibb",
-				new IBBProviders.Close());
-
-		pm.addExtensionProvider("data", "http://jabber.org/protocol/ibb",
-				new IBBProviders.Data());
+//		pm.addIQProvider("open", "http://jabber.org/protocol/ibb",
+//				new IBBProviders.Open());
+//
+//		pm.addIQProvider("close", "http://jabber.org/protocol/ibb",
+//				new IBBProviders.Close());
+//
+//		pm.addExtensionProvider("data", "http://jabber.org/protocol/ibb",
+//				new IBBProviders.Data());
 
 		// Privacy
 		pm.addIQProvider("query", "jabber:iq:privacy", new PrivacyProvider());

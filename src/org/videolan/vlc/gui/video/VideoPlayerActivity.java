@@ -84,6 +84,8 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
@@ -562,11 +564,21 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 						final String msg = message.getBody().toString();
 						// Add the incoming message to the list view
 						mHandler2.post(new Runnable() {
+							@SuppressLint("NewApi")
 							public void run() {
-								// notification or chat...
-								Toast.makeText(getApplicationContext(),
-											fromName[0] + ": " + msg,
-											Toast.LENGTH_SHORT).show();
+								// notification or chat...						
+								if(msg.contains("drawView")){
+									// draw the circle at here
+									/**************
+									Bitmap b = Bitmap.createBitmap(60, 60, Bitmap.Config.ARGB_8888);
+									Canvas c = new Canvas(b);
+									paintView.draw(c);
+									paintView.invalidate();
+									********/
+									Toast.makeText(getApplicationContext(),"redraw", Toast.LENGTH_SHORT).show();
+								}else
+									Toast.makeText(getApplicationContext(),
+											fromName[0] + ": " + msg, Toast.LENGTH_SHORT).show();
 							}
 						});
 					}

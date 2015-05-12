@@ -3,6 +3,7 @@ package easydarwin.android.videostreaming;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -18,12 +19,13 @@ import net.majorkernelpanic.streaming.gl.SurfaceView;
 import net.majorkernelpanic.streaming.rtp.RtpThread;
 import net.majorkernelpanic.streaming.rtsp.RtspClient;
 import net.majorkernelpanic.streaming.video.VideoQuality;
+import openfire.chat.activity.LoginActivity;
 import openfire.chat.adapter.FriendsAdapter;
-import openfire.chat.service.UserServiceImpl;
 
-import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.Roster;
+import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
@@ -38,6 +40,9 @@ import org.jivesoftware.smackx.Form;
 import org.jivesoftware.smackx.FormField;
 import org.jivesoftware.smackx.GroupChatInvitation;
 import org.jivesoftware.smackx.PrivateDataManager;
+import org.jivesoftware.smackx.bytestreams.socks5.provider.BytestreamsProvider;
+import org.jivesoftware.smackx.muc.InvitationListener;
+import org.jivesoftware.smackx.muc.InvitationRejectionListener;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.packet.ChatStateExtension;
 import org.jivesoftware.smackx.packet.LastActivity;
@@ -45,12 +50,10 @@ import org.jivesoftware.smackx.packet.OfflineMessageInfo;
 import org.jivesoftware.smackx.packet.OfflineMessageRequest;
 import org.jivesoftware.smackx.packet.SharedGroupsInfo;
 import org.jivesoftware.smackx.provider.AdHocCommandDataProvider;
-import org.jivesoftware.smackx.provider.BytestreamsProvider;
 import org.jivesoftware.smackx.provider.DataFormProvider;
 import org.jivesoftware.smackx.provider.DelayInformationProvider;
 import org.jivesoftware.smackx.provider.DiscoverInfoProvider;
 import org.jivesoftware.smackx.provider.DiscoverItemsProvider;
-import org.jivesoftware.smackx.provider.IBBProviders;
 import org.jivesoftware.smackx.provider.MUCAdminProvider;
 import org.jivesoftware.smackx.provider.MUCOwnerProvider;
 import org.jivesoftware.smackx.provider.MUCUserProvider;
@@ -145,9 +148,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	private Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+)");
 	public static String username;
 	public static String password;
-	private String entries;
+	//private String entries;
 	private List<Map<String, String>> friendList;
 	private boolean messageFlag = true;
+	
 	private XMPPConnection connection;
 	private String streaminglink = "rtsp://129.128.184.46:8554/";
 	private String curDateTime;
@@ -208,7 +212,13 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}
 
 		/** TODO================================================================ */
-		new GetXMPPConnection().execute();
+		//new GetXMPPConnection().execute();
+
+		// get message listener
+		ReceiveMsgListenerConnection(connection);
+		
+//		System.out.print("VideoStreamingFragment"+connection.getConnectionID());
+//		isUserOnline(connection);
 		// Set the status to available
 //		Presence presence = new Presence(Presence.Type.available);
 //		connection.sendPacket(presence);
@@ -228,7 +238,39 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		    	return true;
 		    }
 		});
-		
+		//=========================================================//
+		MultiUserChat.addInvitationListener(connection, new InvitationListener(){
+
+			@Override
+			public void invitationReceived(Connection conn, String room,  
+                    String inviter, String reason, String password, Message message) {
+				/** room = room3@conference.myria
+				 *  inviter = tiger@myria
+				 *   reason = test invitation !
+				 */
+				Log.i("receive info", "chat-room:"+room+"/"+"inviter:"+inviter+"/"+"reason:"+reason);
+
+				//accepted by default
+				 MultiUserChat multiUserChat = new MultiUserChat(conn, room);  
+	                System.out.println("Receive invitation from "+inviter+", and reason："+reason);  
+	                try {  
+	                    multiUserChat.join("room3"); 
+	                } catch (XMPPException e) {  
+	                    System.out.println("join failure!");  
+	                    e.printStackTrace();  
+	                }  
+	                System.out.println("join success!");  
+	                multiUserChat.addMessageListener(new PacketListener() {  
+	                    @Override  
+	                    public void processPacket(Packet packet) {  
+	                        Message message = (Message)packet;  
+	                        Log.i("received message from: ", message.getFrom() + ":" + message.getBody());
+	                        System.out.println(message.getFrom() + ":" + message.getBody());  
+	                    }  
+	                });  
+			}
+			
+		});
 		return v;
 	}
 
@@ -257,22 +299,43 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		//get username & password
 		username = faActivity.getIntent().getStringExtra("username");
 		password = faActivity.getIntent().getStringExtra("password");
-		entries = faActivity.getIntent().getStringExtra("entries");
+//		entries = faActivity.getIntent().getStringExtra("entries");
 
 		textMessage = (EditText) v.findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button) v.findViewById(R.id.btn_send_message);
+		
+		connection = LoginActivity.connection;
 	}
 
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.btnPlay:
+			// get all the friends
+			friendList = getAllFriendsUser(connection);
+			// judge user is online or not
+			isUserOnline(connection);
 			if (!alive) {
+
+				try {
+//					if(createMultiUserRoom(connection,"room3"))
+//						Log.i("CREATEROOM","success!");
+					if(joinChatRoom(connection,"room3"))
+						Log.i("JOINROOM","success!");
+//					if(inviteToChatRoom(connection,"room3"))
+//						Log.i("INVITEROOM","success!");
+
+				} catch (XMPPException e) {
+					e.printStackTrace();
+				}
+				MultiUserChat muc = new MultiUserChat(connection, "room3@conference.myria");
+				muc.invite(to, "test invitation !");
 				// popupContactList();
-				popupContactList(entries);
+				popupContactList(/*entries*/);
 			} else {
 				alive = false;
 				stopStream();
+				stopConnection();
 				btnSelectContact.setBackgroundResource(R.drawable.play);
 				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
 						Integer.parseInt(mPort), mVideoName));
@@ -292,6 +355,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				btnSelectContact.setBackgroundResource(R.drawable.play);
 				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
 						Integer.parseInt(mPort), mVideoName));
+				if(connection.isConnected())
+					connection.disconnect();
 			}
 			faActivity.finish();
 
@@ -302,7 +367,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}
 	}
 	
-	private void SendMessage(){
+	public void SendMessage(){
 
 		String text = textMessage.getText().toString();
 		if(!text.equals("")&&text!=null){
@@ -457,6 +522,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			mSession = null;
 		}
 
+		
 		paintView.setVisibility(View.GONE);
 //		paintView.setVisibility(View.INVISIBLE);
 		
@@ -556,14 +622,14 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	// Select Fiends to Share the video
 	@SuppressWarnings("deprecation")
-	private void popupContactList(String entries) {
+	private void popupContactList(/*String entries*/) {
 
 		final View v = faActivity.getLayoutInflater().inflate(R.layout.friendlist, null,
 				false);
 		int h = faActivity.getWindowManager().getDefaultDisplay().getHeight();
 		int w = faActivity.getWindowManager().getDefaultDisplay().getWidth();
 
-		friendList = getFriendsList(entries);
+		//friendList = getFriendsList(entries);
 
 		popFriends = new PopupWindow(v, w - 10, (int) (((2.8) * h) / 4));
 		popFriends.setAnimationStyle(R.style.MyDialogStyleBottom);
@@ -580,7 +646,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		friendlistView = (ListView) v.findViewById(R.id.friendlist);
 		friendlistView.setItemsCanFocus(true);
 		friendsAdapter = new FriendsAdapter(faActivity, friendList);
-
+		
 		friendlistView.setAdapter(friendsAdapter);
 		friendlistView.setOnItemClickListener(new OnItemClickListener() {
 
@@ -622,7 +688,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 							Message msg = new Message(selectedListMap.get(i),
 									Message.Type.chat);
 							msg.setBody(streaminglink);
-							if (connection != null && connection.isConnected()) {
+							if (connection != null /*&& connection.isConnected()*/) {
 
 								connection.sendPacket(msg);
 								messages.add(selectedListMap.get(i).split("@")[0]
@@ -632,18 +698,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 								Toast.makeText(faActivity.getApplicationContext(),
 										streaminglink, Toast.LENGTH_SHORT)
 										.show();
-							}else{
-								try {
-									connection.connect();
-//									connection.login(username, password);
-									connection.sendPacket(msg);
+							}else{		
+								Log.i("XMPPChatDemoActivity","Send streaming link wrong");
 
-									Toast.makeText(faActivity.getApplicationContext(),
-											streaminglink, Toast.LENGTH_SHORT)
-											.show();
-								} catch (XMPPException e) {
-									e.printStackTrace();
-								}
 							}
 						}
 					}
@@ -678,11 +735,19 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						// Add the incoming message to the list view
 						Log.i("XMPPChatDemoActivity", msg);
 						mHandler.post(new Runnable() {
+							@SuppressLint("NewApi")
 							public void run() {
 								// notification or chat...
 								if (msg.contains("rtsp://129.128.184.46:8554/")/*equals(streaminglink)*/)	
 									popupReceiveStreamingLinkMessage(msg);
-								else 
+								else  if(msg.contains("drawView")){
+									/***************
+									Bitmap b = Bitmap.createBitmap(60, 60, Bitmap.Config.ARGB_8888);
+									Canvas c = new Canvas(b);
+									paintView.draw(c);
+									paintView.invalidate();
+									 **/	
+								}else
 									Toast.makeText(faActivity.getApplicationContext(),
 											fromName[0] + ": " + msg,
 											Toast.LENGTH_SHORT).show();
@@ -739,7 +804,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		btn_cancel.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				popStreamingLink.dismiss();
-				System.out.println("cancellllllllllllllll");
 			}
 		});
 	}
@@ -747,21 +811,29 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	@Override
 	public void onDestroy() {
-		super.onDestroy();
-		try {
-			if (connection != null)
-				connection.disconnect();
-			stopStream();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		super.onDestroy();	
+		stopStream();
+		stopConnection();
 	}
 	@Override
 	public void onPause() {
 		super.onPause();
 		stopStream();
+		stopConnection();
 	}
 
+	public void stopConnection(){
+		try {
+			if (connection!=null){
+				connection.disconnect();
+				Log.i("STOP","stop connection");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		connection = null;
+
+	}
 	// Add user
 	public static boolean addUsers(Roster roster, String userName, String name) {
 		try {
@@ -776,7 +848,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	}
 
 	// create a multi-user chat room & invite them to join
-	public boolean createMultiUserRoom(XMPPConnection connection,
+	private boolean createMultiUserRoom(XMPPConnection connection,
 			String roomName, ArrayList<String> friendlist) {
 
 		// Get the MultiUserChatManager
@@ -974,63 +1046,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		return Build.MODEL.replaceAll(" ", "_");
 	}
 	
-	
-	// create a multi-user chat room & invite them to join
-	public boolean createMultiUserRoom(XMPPConnection connection,
-			String roomName/*, ArrayList<String> friendlist*/) {
 
-		if(connection==null)
-			return false;
-		// Get the MultiUserChatManager
-		// Create a MultiUserChat using an XMPPConnection for a room
-		MultiUserChat muc = new MultiUserChat(connection, roomName
-				+ "@conference.myria");
-
-		try {
-
-			// Create the room
-			muc.create(roomName);
-
-			// Get the the room's configuration form
-			Form form = muc.getConfigurationForm();
-			// Create a new form to submit based on the original form
-			Form submitForm = form.createAnswerForm();
-			// Add default answers to the form to submit
-			for (Iterator fields = form.getFields(); fields.hasNext();) {
-				FormField field = (FormField) fields.next();
-				if (!FormField.TYPE_HIDDEN.equals(field.getType())
-						&& field.getVariable() != null) {
-					// Sets the default value as the answer
-					submitForm.setDefaultAnswer(field.getVariable());
-				}
-			}
-
-			// configure the room 
-	        submitForm.setAnswer("muc#roomconfig_persistentroom", false);   
-	        submitForm.setAnswer("muc#roomconfig_membersonly", false);  
-	        submitForm.setAnswer("muc#roomconfig_allowinvites", true);  
-
-	        //submitForm.setAnswer("muc#roomconfig_passwordprotectedroom", false);  
-	        
-	        submitForm.setAnswer("muc#roomconfig_enablelogging", true);  
-	        submitForm.setAnswer("x-muc#roomconfig_reservednick", true);  
-	        submitForm.setAnswer("x-muc#roomconfig_canchangenick", true);  
-	        submitForm.setAnswer("x-muc#roomconfig_registration", false);  
-	        submitForm.setAnswer("muc#roomconfig_passwordprotectedroom", true);
-	        
-			muc.sendConfigurationForm(submitForm);
-			// Create a MultiUserChat using an XMPPConnection for a room
-			
-			//muc.invite("user11@myria", "come baby");
-			muc.join(muc.getNickname());
-
-			return true;
-		} catch (XMPPException e) {
-			e.printStackTrace();
-		}
-
-		return false;
-	}
 	/**
 	 * Configure the provider manager
 	 * @param pm
@@ -1157,14 +1173,14 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		pm.addIQProvider("query", "http://jabber.org/protocol/bytestreams",
 				new BytestreamsProvider());
 
-		pm.addIQProvider("open", "http://jabber.org/protocol/ibb",
-				new IBBProviders.Open());
-
-		pm.addIQProvider("close", "http://jabber.org/protocol/ibb",
-				new IBBProviders.Close());
-
-		pm.addExtensionProvider("data", "http://jabber.org/protocol/ibb",
-				new IBBProviders.Data());
+//		pm.addIQProvider("open", "http://jabber.org/protocol/ibb",
+//				new IBBProviders.Open());
+//
+//		pm.addIQProvider("close", "http://jabber.org/protocol/ibb",
+//				new IBBProviders.Close());
+//
+//		pm.addExtensionProvider("data", "http://jabber.org/protocol/ibb",
+//				new IBBProviders.Data());
 
 		// Privacy
 		pm.addIQProvider("query", "jabber:iq:privacy", new PrivacyProvider());
@@ -1229,7 +1245,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			// nothing to do
 		}
 	}
-
+/*
 	@SuppressWarnings("rawtypes")
 	private class GetXMPPConnection extends AsyncTask {
 		@Override
@@ -1246,24 +1262,21 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					config.setSendPresence(true);
 					config.setSASLAuthenticationEnabled(true);
 					connection = new XMPPConnection(config);
-					connection.connect();
-					connection.login(username, password);
+					if(!connection.isConnected())
+						connection.connect();
+					//connection.login(username, password);
 					// Set the status to available
 					Presence presence = new Presence(Presence.Type.available);
 					connection.sendPacket(presence);
+					// get all the friends
+					friendList = getAllFriendsUser(connection);
+					// judge user is online or not
+					isUserOnline(connection);
 					// get message listener
 					ReceiveMsgListenerConnection(connection);
-					
+
 				}
-//				MultiUserChat muc = new MultiUserChat(connection, "room3"
-//						+ "@conference.myria");
-//				muc.join("aaaaaa");
-				
-//				if(createMultiUserRoom(connection,"room3"))
-//					Log.i("createMultiUserRoom","sucess");
-//				else
-//					Log.i("createMultiUserRoom","failure");
-				
+
 				return connection;
 			} catch (XMPPException e) {
 				e.printStackTrace();
@@ -1272,5 +1285,172 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			return null;
 		}
 	}
+*/
+	private void isUserOnline(XMPPConnection connection){
+		
+		Roster roster11 = connection.getRoster();
+		Collection<RosterEntry> entries11 = roster11.getEntries();
+		for (RosterEntry entry : entries11) {
+			Presence presence1 = roster11.getPresence(entry.getUser()); 
+			//user is online or not
+			if(presence1.isAvailable() == true){
+//				Log.i("RosterEntry",entry.getUser() + "--online");
+            }else{
+//            	Log.i("RosterEntry",entry.getUser() + "--offline");
+            }
+		}	
+	}
+	
+	private List<Map<String, String>> getAllFriendsUser(XMPPConnection connection){
+		this.connection = connection;
+		friendList = new ArrayList<Map<String, String>>();
+		Roster roster11 = connection.getRoster();
+		Collection<RosterEntry> entries11 = roster11.getEntries();
+		
+		for (RosterEntry entry : entries11) {
+			Presence presence = roster11.getPresence(entry.getUser()); 
+			Map<String, String> map = new HashMap<String, String>();
+			if(presence.isAvailable()){
+				map.put("status", "online");
+				Log.i("VideoStreaming",entry.getUser() + "--online");
+	        }else{
+	        	map.put("status", "offline");
+	        	Log.i("VideoStreaming",entry.getUser() + "--offline");
+	        }
 
+			map.put("name", entry.getName());
+			map.put("username", entry.getUser());
+//			Log.i("status",presence.getStatus());
+			
+			friendList.add(map);
+		}
+		
+		return friendList;
+	}
+
+	
+	/*** create a multi-user chat room & invite them to join
+	 * @throws XMPPException */
+	private boolean createMultiUserRoom(XMPPConnection connection,
+			String roomName/*, ArrayList<String> friendlist*/) throws XMPPException {
+		this.connection = connection;
+
+		// Get the MultiUserChatManager
+		// Create a MultiUserChat using an XMPPConnection for a room
+		MultiUserChat muc = new MultiUserChat(connection, roomName + "@conference.myria");
+
+		// Create the room
+		muc.create(roomName);
+		// Get the the room's configuration form
+		Form form = muc.getConfigurationForm();
+		// Create a new form to submit based on the original form
+		Form submitForm = form.createAnswerForm();
+		// Add default answers to the form to submit
+/*			for (Iterator fields = form.getFields(); fields.hasNext();) {
+				FormField field = (FormField) fields.next();
+				if (!FormField.TYPE_HIDDEN.equals(field.getType())
+						&& field.getVariable() != null) {
+					// Sets the default value as the answer
+					submitForm.setDefaultAnswer(field.getVariable());
+				}
+			}*/
+		// configure the room 
+        submitForm.setAnswer("muc#roomconfig_persistentroom", false);   
+        submitForm.setAnswer("muc#roomconfig_membersonly", false);  
+        submitForm.setAnswer("muc#roomconfig_allowinvites", true);  
+        //submitForm.setAnswer("muc#roomconfig_passwordprotectedroom", false);  	        
+        submitForm.setAnswer("muc#roomconfig_enablelogging", true);  
+        submitForm.setAnswer("x-muc#roomconfig_reservednick", true);  
+        submitForm.setAnswer("x-muc#roomconfig_canchangenick", true);  
+        submitForm.setAnswer("x-muc#roomconfig_registration", false);  
+        
+		muc.sendConfigurationForm(submitForm);
+
+		return true;
+
+	}
+	
+	/** Join a chat room
+	 * @throws XMPPException */
+	private boolean joinChatRoom(XMPPConnection connection, String roomName) throws XMPPException {
+		this.connection = connection;
+		if(connection!=null){
+
+			// Get the MultiUserChatManager
+			// Create a MultiUserChat using an XMPPConnection for a room
+			MultiUserChat muc = new MultiUserChat(connection, roomName
+					+ "@conference.myria");
+	
+			muc.join("newJoinUser");
+			// receive chat room message
+			muc.addMessageListener(new PacketListener() {  
+	            @Override  
+	            public void processPacket(Packet packet) {  
+	                Message message = (Message)packet;  
+	                System.out.println("Receive message from chat room=>" + StringUtils.parseResource(message.getFrom()) + ": "+message.getBody());  
+	            }  
+	        });  
+			return true;
+		}
+		else
+			return false;
+
+	}
+	
+	/** Invite users to a chat room
+	 * @throws XMPPException */
+	private boolean inviteToChatRoom(XMPPConnection connection, String roomName) throws XMPPException {
+		this.connection = connection;
+//		if(connection==null)
+//			connection.connect();
+
+		// Get the MultiUserChatManager
+		// Create a MultiUserChat using an XMPPConnection for a room
+		MultiUserChat muc = new MultiUserChat(connection, roomName
+				+ "@conference.myria");
+		muc.join("join11");
+		muc.addInvitationRejectionListener(new InvitationRejectionListener(){
+
+			@Override
+			public void invitationDeclined(String invitee, String reason) {
+				// TODO Auto-generated method stub
+				Log.i("muc reject", "invitee:"+invitee+"=="+"reason"+reason);
+			}
+			
+		});
+		// invite another users
+		muc.invite(to, "test invitation !");
+		
+		MultiUserChat.addInvitationListener(connection, new InvitationListener(){
+
+			@Override
+			public void invitationReceived(Connection conn, String room,  
+                    String inviter, String reason, String password, Message message) {
+
+				Log.i("receive info", "chat-room:"+room+"/"+"inviter:"+inviter+"/"+"reason:"+reason);
+				//accepted by default
+				 MultiUserChat multiUserChat = new MultiUserChat(conn, room);  
+	                System.out.println("Receive invitation from "+inviter+", and reason："+reason);  
+	                try {  
+	                    multiUserChat.join("InvitationDefaultJoin"); 
+	                } catch (XMPPException e) {  
+	                    System.out.println("join failure!");  
+	                    e.printStackTrace();  
+	                }  
+	                System.out.println("join success!");  
+	                multiUserChat.addMessageListener(new PacketListener() {  
+	                    @Override  
+	                    public void processPacket(Packet packet) {  
+	                        Message message = (Message)packet;  
+	                        Log.i("received message from: ", message.getFrom() + ":" + message.getBody());
+	                        System.out.println(message.getFrom() + ":" + message.getBody());  
+	                    }  
+	                });  
+			}
+			
+		});
+
+		return true;
+	}
 }
+
