@@ -114,7 +114,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		OnClickListener {
 
 	
-	public static final String to = "tiger@myria";
+	public static final String to = "admin@myria";
 	
 	private static final int REQUEST_SETTING = 1000;
 	// current system info msg
@@ -246,15 +246,15 @@ public class VideoStreamingFragment extends Fragment implements Callback,
                     String inviter, String reason, String password, Message message) {
 				/** room = room3@conference.myria
 				 *  inviter = tiger@myria
-				 *   reason = test invitation !
+				 *  reason = test invitation !
 				 */
 				Log.i("receive info", "chat-room:"+room+"/"+"inviter:"+inviter+"/"+"reason:"+reason);
-
+				conn = connection;
 				//accepted by default
 				 MultiUserChat multiUserChat = new MultiUserChat(conn, room);  
 	                System.out.println("Receive invitation from "+inviter+", and reason："+reason);  
 	                try {  
-	                    multiUserChat.join("room3"); 
+	                    multiUserChat.join("newJoin"); 
 	                } catch (XMPPException e) {  
 	                    System.out.println("join failure!");  
 	                    e.printStackTrace();  
@@ -314,22 +314,23 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			// get all the friends
 			friendList = getAllFriendsUser(connection);
 			// judge user is online or not
-			isUserOnline(connection);
+//			isUserOnline(connection);
 			if (!alive) {
 
 				try {
-//					if(createMultiUserRoom(connection,"room3"))
-//						Log.i("CREATEROOM","success!");
+					if(createMultiUserRoom(connection,"room3"))
+						Log.i("CREATEROOM","success!");
 					if(joinChatRoom(connection,"room3"))
 						Log.i("JOINROOM","success!");
-//					if(inviteToChatRoom(connection,"room3"))
-//						Log.i("INVITEROOM","success!");
+					if(inviteToChatRoom(connection,"room3"))
+						Log.i("INVITEROOM","success!");
 
 				} catch (XMPPException e) {
 					e.printStackTrace();
 				}
-				MultiUserChat muc = new MultiUserChat(connection, "room3@conference.myria");
-				muc.invite(to, "test invitation !");
+				// invite friends to the chat room
+//				MultiUserChat muc = new MultiUserChat(connection, "room3@conference.myria");
+//				muc.invite(to, "test invitation !");
 				// popupContactList();
 				popupContactList(/*entries*/);
 			} else {
@@ -1355,6 +1356,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				}
 			}*/
 		// configure the room 
+//		List<String> roomOwner = new ArrayList<String>();
+//		roomOwner.add(connection.getUser());
+//		submitForm.setAnswer("muc#roomconfig_roomowners", roomOwner);
+		
         submitForm.setAnswer("muc#roomconfig_persistentroom", false);   
         submitForm.setAnswer("muc#roomconfig_membersonly", false);  
         submitForm.setAnswer("muc#roomconfig_allowinvites", true);  

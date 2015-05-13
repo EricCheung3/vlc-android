@@ -194,8 +194,8 @@ public class LoginActivity extends Activity implements OnClickListener {
 					editor.commit();
 				}
 				// Set the status to available (online)
-//				Presence presence = new Presence(Presence.Type.available);
-//				connection.sendPacket(presence);
+				Presence presence = new Presence(Presence.Type.available);
+				connection.sendPacket(presence);
 /*				
 				Roster roster = connection.getRoster();
 				Object[] entries = roster.getEntries().toArray();
