@@ -53,10 +53,9 @@ public class UserServiceImpl implements UserService {
 //			throw new ServiceException(LoginActivity.SERVER_ERROR);
 //
 //		}
-		if(connection == null )
+		if(connection == null || !connection.isAuthenticated())
 			connection = GetConnection();
-		else
-			Log.i("CONNECTION", "null");
+
 		try {
 			connection.login(username, password);
 		} catch (XMPPException xe) {

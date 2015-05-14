@@ -131,9 +131,11 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
+import easydarwin.android.videostreaming.MultiRoom;
 import easydarwin.android.videostreaming.PaintView;
 import easydarwin.android.videostreaming.VideoStreamingFragment;
 
+@SuppressLint("ClickableViewAccessibility")
 public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     public final static String TAG = "VLC/VideoPlayerActivity";
 
@@ -393,10 +395,13 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             mSubtitlesSurfaceHolder.addCallback(mSubtitlesSurfaceCallback);
         }
 
-        /**TODO: start a new thread for chatting,
+        /** TODO:
+         * get XMPPConnection [need to reconnect to the server]
          * and add a PaintView for touch screen*/  
 		new GetXMPPConnection().execute();
 
+		
+		
 		textMessage = (EditText) findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button)findViewById(R.id.btn_send_message);
 		// EditText: set android keyboard enter button as send button
@@ -417,7 +422,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		});
 
 		
-		/* draw a circle when users touch the screen */
+		/** draw a circle when users touch the screen */
     	paintView = (PaintView) findViewById(R.id.drawView);		
     	paintView.setVisibility(View.VISIBLE);
     	paintView.setFocusable(true);
@@ -492,7 +497,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		String text = textMessage.getText().toString();
 		if(!text.equals("")&&text!=null){
 			Log.i("XMPPChatDemoActivity", "Sending text " + text + " to-VideoStreamingFragment-- " + VideoStreamingFragment.to);
-			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(VideoStreamingFragment.to, org.jivesoftware.smack.packet.Message.Type.chat);
+			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(VideoStreamingFragment.to, org.jivesoftware.smack.packet.Message.Type.groupchat);
 			msg.setBody(text);
 			if (connection != null) {
 				connection.sendPacket(msg);
@@ -526,7 +531,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					config.setSASLAuthenticationEnabled(true);
 					connection = new XMPPConnection(config);
 					connection.connect();
-					Log.i("username", VideoStreamingFragment.username);
+//					Log.i("username", VideoStreamingFragment.username);
 					connection.login(VideoStreamingFragment.username, VideoStreamingFragment.password);
 					// Set the status to available
 					Presence presence = new Presence(Presence.Type.available);
@@ -534,6 +539,17 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					// get message listener
 					ReceiveMsgListenerConnection(connection);
 					
+					MultiRoom mRoom = new MultiRoom();
+					
+					mRoom.InvitationListener(connection);
+					try {
+
+						if(mRoom.joinChatRoom(connection,"room3"))
+							Log.i("JOINROOM","success!");
+					
+					} catch (XMPPException e) {
+						e.printStackTrace();
+					}
 				}
 				
 				return connection;
@@ -550,7 +566,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		this.connection = connection;
 		if (connection != null) {
 			// Add a packet listener to get messages sent to us
-			PacketFilter filter = new MessageTypeFilter(org.jivesoftware.smack.packet.Message.Type.chat);
+			PacketFilter filter = new MessageTypeFilter(org.jivesoftware.smack.packet.Message.Type.groupchat);
 			connection.addPacketListener(new PacketListener() {
 				@Override
 				public void processPacket(Packet packet) {

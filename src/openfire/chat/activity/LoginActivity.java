@@ -2,17 +2,11 @@ package openfire.chat.activity;
 
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 import openfire.chat.service.ServiceException;
 import openfire.chat.service.UserService;
 import openfire.chat.service.UserServiceImpl;
 
-import org.jivesoftware.smack.Roster;
-import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.Presence;
 import org.videolan.vlc.R;
@@ -26,14 +20,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.content.pm.PackageInfo;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo.State;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -70,7 +62,6 @@ public class LoginActivity extends Activity implements OnClickListener {
 	boolean registerFlag;
 	public static XMPPConnection connection;
 
-	private PackageInfo info;
 	private String username;
 	private String password;
 
@@ -164,15 +155,12 @@ public class LoginActivity extends Activity implements OnClickListener {
 	}
 
 	// LoginThread
-//	List<Map<String,String>> listMap = new ArrayList<Map<String,String>>();
 	private class LoginThread implements Runnable {
 		@Override
 		public void run() {
 
 			try {
-
 				connection = userService.userLogin(username, password);
-
 			} catch (ServiceException e) {
 				e.printStackTrace();
 				Message msg = new Message();
@@ -187,7 +175,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 			if (connection!=null) {
 				handler.sendEmptyMessage(LOGIN_SUCCESS);
 				if (cheRempwd.isChecked()) {
-					// remember username & paw
+					// remember username & pwd
 					Editor editor = sp.edit();
 					editor.putString("USERNAME", username);
 					editor.putString("PASSWORD", password);
@@ -196,46 +184,9 @@ public class LoginActivity extends Activity implements OnClickListener {
 				// Set the status to available (online)
 				Presence presence = new Presence(Presence.Type.available);
 				connection.sendPacket(presence);
-/*				
-				Roster roster = connection.getRoster();
-				Object[] entries = roster.getEntries().toArray();
-				for (Object entry : entries) {
-					Map<String,String> map = new HashMap<String,String>();
-					
-					String[] s = entry.toString().split(" ");
-					Log.i("s[0]", s[0]);
-					Log.i("s[1]", s[1]);
-					if(s.length==2){
-						map.put("name", s[0]);
-						map.put("username", s[1]);
-					}else if(s.length==3){
-						map.put("name", s[0]);
-						map.put("username", s[1]);
-						map.put("group", s[2]);
-					}
-					listMap.add(map);
-				}
-				System.out.println(listMap.toString());
-*/
-//				Roster roster11 = connection.getRoster();
-//				Collection<RosterEntry> entries11 = roster11.getEntries();
-//				for (RosterEntry entry : entries11) {
-//					Presence presence = roster11.getPresence(entry.getUser()); 
-//					//user is online or offline
-//					if(presence.isAvailable() == true){
-//						Log.i("RosterEntry",entry.getUser() + "--online");
-//		             }else
-//		            	 Log.i("RosterEntry",entry.getUser() + "--offline");
-//					Log.i("RosterEntry","------"+entry.toString()+"----");//user4: user4@myria [myFriends]
-//					Log.i("RosterEntry","getUser: " + entry.getUser());//user4@myria
-//					Log.i("RosterEntry","getGroups: " + entry.getType());
-//				}
-				//Log.i("connection","getUser: " + connection.getUser());//user2@myria/Smack
 
-//				Roster roster = connection.getRoster();
-//				String entries = roster.getEntries().toString();
-//				Log.i("entries",entries);
 				Intent intent = new Intent();
+				// for [VideoPlayerActivity] reconnect to the XMPP server
 				intent.putExtra("username", username);
 				intent.putExtra("password", password);
 //				intent.putExtra("entries", entries);
@@ -285,7 +236,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 	}
 
 	// check network state function
-	public void CheckNetworkState() {
+	private void CheckNetworkState() {
 		// /boolean flag = false;
 		ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		State mobile = manager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE)
