@@ -1,5 +1,8 @@
 package easydarwin.android.videostreaming;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
@@ -43,9 +46,9 @@ public class MultiRoom {
 				}
 			}*/
 		// configure the room 
-//		List<String> roomOwner = new ArrayList<String>();
-//		roomOwner.add(connection.getUser());
-//		submitForm.setAnswer("muc#roomconfig_roomowners", roomOwner);
+		List<String> roomOwner = new ArrayList<String>();
+		roomOwner.add(connection.getUser());
+		submitForm.setAnswer("muc#roomconfig_roomowners", roomOwner);
 		
         submitForm.setAnswer("muc#roomconfig_persistentroom", false);   
         submitForm.setAnswer("muc#roomconfig_membersonly", false);  
@@ -54,7 +57,7 @@ public class MultiRoom {
         submitForm.setAnswer("muc#roomconfig_enablelogging", true);  
         submitForm.setAnswer("x-muc#roomconfig_reservednick", true);  
         submitForm.setAnswer("x-muc#roomconfig_canchangenick", true);  
-        submitForm.setAnswer("x-muc#roomconfig_registration", false);  
+        submitForm.setAnswer("x-muc#roomconfig_registration", true);  
         
 		muc.sendConfigurationForm(submitForm);
 
@@ -66,13 +69,14 @@ public class MultiRoom {
 	 * @throws XMPPException */
 	public boolean joinChatRoom(XMPPConnection connection, String roomName) throws XMPPException {
 		if(connection!=null){
-
 			// Get the MultiUserChatManager
 			// Create a MultiUserChat using an XMPPConnection for a room
 			MultiUserChat muc = new MultiUserChat(connection, roomName
 					+ "@conference.myria");
 	
-			muc.join("newJoinUser");
+			muc.join(connection.getUser());
+			Log.i("JOIN-USER-NAME",connection.getUser());
+			
 			// receive chat room message
 			muc.addMessageListener(new PacketListener() {  
 	            @Override  
@@ -90,32 +94,32 @@ public class MultiRoom {
 	
 	/** Invite users to a chat room
 	 * @throws XMPPException */
-	public boolean inviteToChatRoom(XMPPConnection connection, String roomName) throws XMPPException {
+	public boolean inviteToChatRoom(XMPPConnection connection, String roomName, ArrayList<String> friendsList) throws XMPPException {
 
-//		if(connection==null)
-//			connection.connect();
-
-		// Get the MultiUserChatManager
-		// Create a MultiUserChat using an XMPPConnection for a room
-		MultiUserChat muc = new MultiUserChat(connection, roomName
-				+ "@conference.myria");
-		muc.join("join11");
-		muc.addInvitationRejectionListener(new InvitationRejectionListener(){
-
-			@Override
-			public void invitationDeclined(String invitee, String reason) {
-				// TODO Auto-generated method stub
-				Log.i("muc reject", "invitee:"+invitee+"=="+"reason"+reason);
+		if(connection != null){
+			// Get the MultiUserChatManager
+			// Create a MultiUserChat using an XMPPConnection for a room
+			MultiUserChat muc = new MultiUserChat(connection, roomName
+					+ "@conference.myria");
+			muc.join(connection.getUser()+"-owner");
+			muc.addInvitationRejectionListener(new InvitationRejectionListener(){
+	
+				@Override
+				public void invitationDeclined(String invitee, String reason) {
+					// TODO Auto-generated method stub
+					Log.i("muc reject", "invitee:"+invitee+"=="+"reason"+reason);
+				}
+				
+			});
+			// invite another users
+			for(String friend: friendsList){
+				Log.i("INVITATION-FRIENDS",friend);
+				muc.invite(friend, "Join us "+friend);
 			}
-			
-		});
-		// invite another users
-		muc.invite(VideoStreamingFragment.to, "test invitation !");
-		muc.invite("ali@myria", "test2");
-		muc.invite("diego@myria", "test3");
 		
-		
-		return true;
+			return true;
+		}else
+			return false;
 	}
 	
 	public void InvitationListener(final XMPPConnection connection){
@@ -132,9 +136,9 @@ public class MultiRoom {
 				conn = connection;
 				//accepted by default
 				MultiUserChat multiUserChat = new MultiUserChat(conn, room);  
-                System.out.println("Receive invitation from "+inviter+", and reason："+reason);  
+                System.out.println("Receive invitation from "+inviter+", and room："+multiUserChat.getRoom());  
                 try {  
-                    multiUserChat.join("newJoin"); 
+                    multiUserChat.join(connection.getUser()); 
                 } catch (XMPPException e) {  
                     Log.e("INVITATION","invite to join failure!");  
                     e.printStackTrace();  
@@ -152,6 +156,52 @@ public class MultiRoom {
 			
 		});
 	}
+	
+	// for both side call: stop the connection
+	public void stopConnection(XMPPConnection connection){
+		try {
+			if (connection!=null){
+				connection.disconnect();
+				Log.i("STOP","stop connection");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		connection = null;
+
+	}
+	
+	/** leave the chat room*/
+	public boolean departChatRoom(XMPPConnection connection,String room){  
+	    boolean result = false;  
+	    MultiUserChat multiUserChat = new MultiUserChat(connection, room+"@conference.myria");  
+	    if(multiUserChat!=null){  
+	    	multiUserChat.leave();  
+
+	        result = true;  
+	    }  
+	    Log.i("LEAVE_ROOM",multiUserChat.getNickname()+" has left room!");
+	    return result;    
+	}
+	
+//	public boolean sendChatMessage2(XMPPConnection connection,String room, String msg){  
+//	    boolean result = false;  
+//	    try {  
+//	        MultiUserChat muc = new MultiUserChat(connection, room+"@conference.myria");  
+//	        if(muc!=null){  
+//	            Message message = new Message();  
+//	            message.setBody(msg);  
+//	            message.setTo(muc.getRoom()+"@conference.myria");  
+//	            message.setType(Message.Type.groupchat);  
+//	            muc.sendMessage(message);  
+//	            result =true;  
+//	        }  
+//	    } catch (XMPPException e) {  
+//	        Log.e("send message error.",e.toString());  
+//	    }  
+//	    return result;  
+//	} 
+	
 //	public static void joinRoom() throws XMPPException{  
 //        MultiUserChat multiUserChat = new MultiUserChat(connection, room + "@conference.myria");  
 //        multiUserChat.join("tiger", "");  

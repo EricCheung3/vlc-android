@@ -75,28 +75,28 @@ public class PaintView extends View implements OnTouchListener {
 		}
 		return true;
 	}
-
-	private void SendMessage(XMPPConnection connection) {
-
-		if (mX > 0) {
-
-			Message msg = new Message(VideoStreamingFragment.to,
-					Message.Type.chat);
-			msg.setBody("drawView" + Float.toString(mX));
-			if (connection != null&& connection.isConnected()) {
-				connection.sendPacket(msg);
-				Log.i("PaintView", msg.getBody());
-			}else{
-				try {
-					connection.connect();
-					connection.sendPacket(msg);
-				} catch (XMPPException e) {
-					e.printStackTrace();
-				}
-
-			}
-		}
-	}
+//
+//	private void SendMessage(XMPPConnection connection) {
+//
+//		if (mX > 0) {
+//
+//			Message msg = new Message(VideoStreamingFragment.to,
+//					Message.Type.chat);
+//			msg.setBody("drawView" + Float.toString(mX));
+//			if (connection != null&& connection.isConnected()) {
+//				connection.sendPacket(msg);
+//				Log.i("PaintView", msg.getBody());
+//			}else{
+//				try {
+//					connection.connect();
+//					connection.sendPacket(msg);
+//				} catch (XMPPException e) {
+//					e.printStackTrace();
+//				}
+//
+//			}
+//		}
+//	}
 
 	private XMPPConnection GetConnection() {
 		try {

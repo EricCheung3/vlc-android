@@ -49,6 +49,7 @@ import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.videolan.libvlc.EventHandler;
 import org.videolan.libvlc.IVideoPlayer;
 import org.videolan.libvlc.LibVLC;
@@ -274,6 +275,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     
     /** draw a circle when touch the screen */
 	private PaintView paintView;
+	/** room chat*/
+	MultiRoom mRoom = new MultiRoom();
 	
     @Override
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -409,7 +412,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		    
 		    @Override
 		    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-		    	SendMessage();
+		    	SendMessage("room3");
 		    	return true;
 		    }
 		});
@@ -417,7 +420,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
 			@Override
 			public void onClick(View arg0) {
-				SendMessage();
+				SendMessage("room3");
 				}
 		});
 
@@ -492,16 +495,21 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     }
 
     /* send message */
-    private void SendMessage(){
+    public void SendMessage(String room){
 
+		MultiUserChat muc = new MultiUserChat(connection, room);  
+		
 		String text = textMessage.getText().toString();
 		if(!text.equals("")&&text!=null){
-			Log.i("XMPPChatDemoActivity", "Sending text " + text + " to-VideoStreamingFragment-- " + VideoStreamingFragment.to);
-			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(VideoStreamingFragment.to, org.jivesoftware.smack.packet.Message.Type.groupchat);
+
+			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(muc.getRoom()+"@conference.myria", org.jivesoftware.smack.packet.Message.Type.groupchat);
 			msg.setBody(text);
 			if (connection != null) {
-				connection.sendPacket(msg);
-
+				try {
+					muc.sendMessage(msg);
+				} catch (XMPPException e) {
+					e.printStackTrace();
+				} 
 				Toast.makeText(getApplicationContext(), text,
 						Toast.LENGTH_SHORT).show();
 			}
@@ -509,9 +517,28 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		}else{
 			Toast.makeText(getApplicationContext(), "The input cannot be null!",
 					Toast.LENGTH_SHORT).show();
-		}	    	
-    
-    }
+		} 
+	}
+//    private void SendMessage2(){
+//
+//		String text = textMessage.getText().toString();
+//		if(!text.equals("")&&text!=null){
+//			Log.i("XMPPChatDemoActivity", "Sending text " + text + " to-VideoStreamingFragment-- " + VideoStreamingFragment.to);
+//			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(VideoStreamingFragment.to, org.jivesoftware.smack.packet.Message.Type.groupchat);
+//			msg.setBody(text);
+//			if (connection != null) {
+//				connection.sendPacket(msg);
+//
+//				Toast.makeText(getApplicationContext(), text,
+//						Toast.LENGTH_SHORT).show();
+//			}
+//			textMessage.setText("");
+//		}else{
+//			Toast.makeText(getApplicationContext(), "The input cannot be null!",
+//					Toast.LENGTH_SHORT).show();
+//		}	    	
+//    
+//    }
 
 	@SuppressWarnings("rawtypes")
 	private class GetXMPPConnection extends AsyncTask {
@@ -537,10 +564,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					Presence presence = new Presence(Presence.Type.available);
 					connection.sendPacket(presence);
 					// get message listener
-					ReceiveMsgListenerConnection(connection);
-					
-					MultiRoom mRoom = new MultiRoom();
-					
+//					ReceiveMsgListenerConnection(connection);
+					/**Room chat receive message listener*/
+					RoomMsgListenerConnection(connection);
+					// Inviataion Listener
 					mRoom.InvitationListener(connection);
 					try {
 
@@ -562,6 +589,34 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 	}
 
 	private Handler mHandler2 = new Handler();
+	public void RoomMsgListenerConnection(XMPPConnection connection) {
+
+		if (connection != null) {
+			// Add a packet listener to get messages sent to us
+			final MultiUserChat multiUserChat = new MultiUserChat(connection, "room3"+"@conference.myria");
+			multiUserChat.addMessageListener(new PacketListener() {  
+                @Override  
+                public void processPacket(Packet packet) {  
+                	org.jivesoftware.smack.packet.Message message = (org.jivesoftware.smack.packet.Message) packet;
+                    Log.i("ROOM-CHAT PLAYER-SIDE RECEIVE-MESSAGE: ", message.getFrom() + ":" + message.getBody());
+                    final String[] fromName = message.getFrom().split("/");
+			
+                    final String msg = message.getBody().toString();
+                    mHandler2.post(new Runnable() {
+						@SuppressLint("NewApi")
+						public void run() {
+							// notification or chat...						
+
+							Toast.makeText(getApplicationContext(),
+										fromName[1]+ "2: " + msg, Toast.LENGTH_SHORT).show();
+						}
+					});
+                    //System.out.println(message.getFrom() + ":" + message.getBody());  
+                }  
+            });  
+
+		}
+	}
 	public void ReceiveMsgListenerConnection(XMPPConnection connection) {
 		this.connection = connection;
 		if (connection != null) {
@@ -678,6 +733,11 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             mPresentation.dismiss();
             mPresentation = null;
         }
+        
+        // Stop Connection
+        /** it should be left room, not disconnect the connection*/
+//        mRoom.stopConnection(connection);
+        mRoom.departChatRoom(connection, "room3");
     }
 
     @Override
@@ -695,6 +755,11 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             mLibVLC.setHardwareAcceleration(mPreviousHardwareAccelerationMode);
 
         mAudioManager = null;
+        
+        // Stop Connection
+        /** it should be left room, not disconnect the connection*/
+//        mRoom.stopConnection(connection);
+        mRoom.departChatRoom(connection, "room3");
     }
 
     @Override
