@@ -57,7 +57,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 	private CheckBox cheRempwd;
 	private static ProgressDialog mDialog;
 	public SharedPreferences sp;
-	private UserService userService = new UserServiceImpl();
+	private UserService userService ;
 
 	boolean registerFlag;
 	public static XMPPConnection connection;
@@ -72,7 +72,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 		setContentView(R.layout.login);
 		initView();
 		sp = this.getSharedPreferences("userInfo", Context.MODE_PRIVATE);
-
+		userService = new UserServiceImpl();
 		username = inputUsername.getText().toString();
 		password = inputPassword.getText().toString();
 		

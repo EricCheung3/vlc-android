@@ -171,16 +171,24 @@ public class MultiRoom {
 
 	}
 	
-	/** leave the chat room*/
+	/** Destroy leave the chat room*/
 	public boolean departChatRoom(XMPPConnection connection,String room){  
 	    boolean result = false;  
-	    MultiUserChat multiUserChat = new MultiUserChat(connection, room+"@conference.myria");  
+	    MultiUserChat multiUserChat = new MultiUserChat(connection, room + "@conference.myria");  
 	    if(multiUserChat!=null){  
-	    	multiUserChat.leave();  
+	    	// leave
+//	    	multiUserChat.leave();  
+	    	// destroy chatroom
+	    	try {
+				multiUserChat.destroy("destroy reason", room + "@conference.myria");
+				Log.i("LEAVE_ROOM",connection.getUser()+" Destroy the room");
+			} catch (XMPPException e) {
+				e.printStackTrace();
+			}
 
 	        result = true;  
 	    }  
-	    Log.i("LEAVE_ROOM",multiUserChat.getNickname()+" has left room!");
+	    
 	    return result;    
 	}
 	

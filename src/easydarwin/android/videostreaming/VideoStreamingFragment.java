@@ -155,7 +155,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	 
 	private FragmentActivity faActivity;
 	
-	MultiRoom mRoom = new MultiRoom();
+	private MultiRoom mRoom = new MultiRoom();
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -268,7 +268,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			} else {
 				alive = false;
 				stopStream();
-
+				SendNotification("room3",connection.getUser()+"-owner disconnected the connection and left the room!");
+				mRoom.departChatRoom(connection, "room3");
+				
 				btnSelectContact.setBackgroundResource(R.drawable.play);
 				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
 						Integer.parseInt(mPort), mVideoName));
@@ -285,6 +287,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			if (alive) {
 				alive = false;
 				stopStream();
+				SendNotification("room3",connection.getUser()+"-owner disconnected the connection!");
 				btnSelectContact.setBackgroundResource(R.drawable.play);
 				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
 						Integer.parseInt(mPort), mVideoName));
@@ -299,8 +302,30 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}
 	}
 	
+	// send notification
+	private void SendNotification(String room, String content){
+
+		MultiUserChat muc = new MultiUserChat(connection, room);  
+
+		Message message = new Message();  
+        message.setBody(content);  
+        message.setTo(muc.getRoom()+"@conference.myria");  
+        message.setType(Message.Type.groupchat);  
+		 
+		if (muc != null) {
+			try {
+				muc.sendMessage(message);
+				Log.i("ROOM-NOTIFICATION", "Sending text " + content + " to " + muc.getRoom());
+			} catch (XMPPException e) {
+				e.printStackTrace();
+			} 
+			Toast.makeText(faActivity.getApplicationContext(), content,
+					Toast.LENGTH_SHORT).show();
+		}
+		
+	}
 	
-	public void SendMessage(String room){
+	private void SendMessage(String room){
 
 		MultiUserChat muc = new MultiUserChat(connection, room);  
 		
@@ -416,7 +441,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 					String tranport = preferences.getString(
 							EasyCameraApp.KEY_TRANPORT, "0");
-					if ("0".equals(tranport)) {
+					if (tranport.equals("0")) {
 						mClient.setTransportMode(RtspClient.TRANSPORT_TCP);
 					} else {
 						mClient.setTransportMode(RtspClient.TRANSPORT_UDP);
@@ -614,7 +639,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					}
 				});			
 				// CREATE CHAT ROOM AND INVITE SELECTED FRIENDS TO JOIN
-				if(selectedListMap.size() > 0){
+				if(selectedListMap.size() >= 0){
 					
 					try {
 						if(mRoom.createMultiUserRoom(connection,"room3"))
