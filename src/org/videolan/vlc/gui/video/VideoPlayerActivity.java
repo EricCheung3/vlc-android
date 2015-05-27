@@ -38,6 +38,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
+import openfire.chat.activity.LoginActivity;
 import openfire.chat.service.UserServiceImpl;
 
 import org.jivesoftware.smack.ConnectionConfiguration;
@@ -399,7 +400,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         /** TODO:
          * get XMPPConnection [need to reconnect to the server]
          * and add a PaintView for touch screen*/ 
-        mRoom = new MultiRoom(this);
+        // import: use sender[A]'s mRoom to keep room info same with player[B]
+        mRoom = VideoStreamingFragment.mRoom;
+        // new thread to keep connection
 		new GetXMPPConnection().execute();
 		
 		textMessage = (EditText) findViewById(R.id.edit_say_something);
@@ -538,22 +541,17 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					// Set the status to available
 					Presence presence = new Presence(Presence.Type.available);
 					connection.sendPacket(presence);
-					// get message listener
-					mRoom.ReceiveMsgListenerConnection(connection);
 					// Inviataion Listener
-					invitedRoom = mRoom.rooom; //good
 					invitedRoom = mRoom.getChatRoom();
-//					mRoom.InvitationListener(connection);
-					Log.i("VIDEOPLAYERACTIVITY-ROOMNAME==JOINROOM",invitedRoom+" success!");// room2015_0526_135012 
+					mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
+					Log.i("VIDEOPLAYERACTIVITY-ROOMNAME",invitedRoom+" success!");
+					
 					try {
 						if(mRoom.joinChatRoom(connection,invitedRoom))
 							Log.i("invitedRoom",invitedRoom+"success");			
 					} catch (XMPPException e) {
 						e.printStackTrace();
 					}
-					
-					/**Room chat receive message listener*/
-//					RoomMsgListenerConnection(connection, invitedRoom);
 				}
 				
 				return connection;
@@ -563,78 +561,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
 			return connection;
 		}
-	}
-	// Room Message Listener
-	private Handler mHandler2 = new Handler();
-	private void RoomMsgListenerConnection(XMPPConnection connection, String invitedRoom) {
-
-		if (connection != null) {
-			
-			// Add a packet listener to get messages sent to us
-			MultiUserChat multiUserChat = new MultiUserChat(connection, invitedRoom+"@conference.myria");
-			multiUserChat.addMessageListener(new PacketListener() {  
-                @Override  
-                public void processPacket(Packet packet) {  
-                	org.jivesoftware.smack.packet.Message message = (org.jivesoftware.smack.packet.Message) packet;
-                    Log.i("ROOM-CHAT PLAYER-SIDE RECEIVE-MESSAGE: ", message.getFrom() + ":" + message.getBody());
-                    //room2015_0526_144442@conference.myria/tiger@myria/Smack:      fghh
-                    final String[] fromName = message.getFrom().split("/");
-			
-                    final String msg = message.getBody().toString();
-                    mHandler2.post(new Runnable() {
-						@SuppressLint("NewApi")
-						public void run() {
-							// notification or chat...	
-							if(msg.contains("drawView")){
-								// draw the circle at here
-								/**************
-								Bitmap b = Bitmap.createBitmap(60, 60, Bitmap.Config.ARGB_8888);
-								Canvas c = new Canvas(b);
-								paintView.draw(c);
-								paintView.invalidate();
-								********/
-								Toast.makeText(getApplicationContext(),"redraw", Toast.LENGTH_SHORT).show();
-							}else
-								Toast.makeText(getApplicationContext(),
-										fromName[1]+ "2: " + msg, Toast.LENGTH_SHORT).show();
-						}
-					});  
-                }  
-            }); 
-			/*
-			//Receive message listener
-			PacketFilter filter = new MessageTypeFilter(org.jivesoftware.smack.packet.Message.Type.groupchat);
-			connection.addPacketListener(new PacketListener() {
-				@Override
-				public void processPacket(Packet packet) {
-					org.jivesoftware.smack.packet.Message message = (org.jivesoftware.smack.packet.Message) packet;
-					if (message.getBody() != null) {
-						final String[] fromName = StringUtils.parseBareAddress(
-								message.getFrom()).split("@");
-						Log.i("XMPPChatDemoActivity", "VideoPlayer Text Recieved "
-								+ message.getBody() + " from " + fromName[0]);
-
-						final String msg = message.getBody().toString();
-						// Add the incoming message to the list view
-						mHandler2.post(new Runnable() {
-							@SuppressLint("NewApi")
-							public void run() {
-								// notification or chat...						
-								if(msg.contains("drawView")){
-
-									Toast.makeText(getApplicationContext(),"redraw", Toast.LENGTH_SHORT).show();
-								}else
-									Toast.makeText(getApplicationContext(),
-											fromName[0] + ": " + msg, Toast.LENGTH_SHORT).show();
-							}
-						});
-					}
-				}
-			}, filter);
-			*/
-		}
-	}
-	
+	}	
 
     @Override
     protected void onPause() {

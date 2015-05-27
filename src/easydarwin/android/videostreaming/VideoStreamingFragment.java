@@ -142,7 +142,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	//private String entries;
 	private List<Map<String, String>> friendList;
 	
-	private XMPPConnection connection;
+	public static XMPPConnection connection;
 	private String streaminglinkTag = "rtsp://129.128.184.46:8554/";
 	private static String streaminglink="";
 	private String curDateTime;
@@ -152,7 +152,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	 
 	private static FragmentActivity faActivity;
 	
-	private MultiRoom mRoom;
+	public static MultiRoom mRoom;
 	private String room = null; // "room3" 
 
 
@@ -178,13 +178,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 //		streaminglink = streaminglinkTag + getDefaultDeviceId()+ curDateTime + ".sdp";
 		streaminglink = "rtsp://129.128.184.46:8554/live.sdp";
 		
-		/*
-		roomName = "room" + curDateTime;
-		mRoom.setRoomName(roomName);
-		Log.i("ROOMNAME1", roomName);
-		roomName = mRoom.getRoomName();
-		Log.i("ROOMNAME2", roomName);
-		*/
 		boolean bParamInvalid = (TextUtils.isEmpty(mAddress)
 				|| TextUtils.isEmpty(mPort) || TextUtils.isEmpty(mVideoName));
 		if (EasyCameraApp.sState != EasyCameraApp.STATE_DISCONNECTED) {
@@ -205,10 +198,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 //		ReceiveMsgListenerConnection(connection);
 		/** TODO*/
 		/** Invitation Listener */
-		room = mRoom.InvitationListener(connection);
+		mRoom.InvitationListener(connection);	
+		mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
+//		Log.i("aaaaaaaaaaaaaaaaaa", mRoom.getChatRoom());
 		
-		RoomMsgListenerConnection(connection, room);
-			
+		
 		btnSelectContact.setOnClickListener(this);
 		btnOption.setOnClickListener(this);
 		btnStop.setOnClickListener(this);
@@ -313,34 +307,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}
 	}
 
-	
-//	private void SendMessage(String room){
-//
-//		MultiUserChat muc = new MultiUserChat(connection, room);  
-//		
-//		String text = textMessage.getText().toString();
-//		if(!text.equals("")&&text!=null){
-//			
-//			Message message = new Message(muc.getRoom()+"@conference.myria",Message.Type.groupchat);  
-//            message.setBody(text);  
-//			 
-//			if (muc != null) {
-//				try {
-//					muc.sendMessage(message);
-//					Log.i("SEND-MSG-TO-ROOM", "Sending text " + text + " to " + muc.getRoom());
-//				} catch (XMPPException e) {
-//					e.printStackTrace();
-//				} 
-////				Toast.makeText(faActivity.getApplicationContext(), text,
-////						Toast.LENGTH_SHORT).show();
-//			}
-//			textMessage.setText("");
-//		}else{
-//			Toast.makeText(faActivity.getApplicationContext(), "The input cannot be null!",
-//					Toast.LENGTH_SHORT).show();
-//		} 
-//	}
-	
 
 	/**
 	 * start video streaming function
@@ -368,7 +334,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			protected Integer doInBackground(Void... params) {
 
 				publishProgress();
-
+				// start room message listener in back-end
+				mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
+				Log.i("aaaaaaa",mRoom.getChatRoom());
+				
+				
 				if (mSession == null) {// try to load video info directly...
 					boolean audioEnable = preferences.getBoolean(
 							"p_stream_audio", true);
@@ -564,16 +534,15 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		btn_Send = (Button) v.findViewById(R.id.btn_play);
 		btn_Send.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				// START TO PUSH VIDEO
-				PLAYVideoStreaming();
-				Log.i("PLAY", "following should be streainglink====");
 				curDateTime = new SimpleDateFormat(
 						"yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
 				room = "room" + curDateTime;
 				mRoom.setChatRoom(room);
 				Log.i("MULTIROOM-ROOM",room);
 				
-				
+				// START TO PUSH VIDEO
+				PLAYVideoStreaming();
+				Log.i("PLAY", "following should be streainglink====");
 				if (popFriends != null)
 					popFriends.dismiss();
 				// SEND VIDOE NOTIFICATION TO SELECTED FRIENDS
@@ -607,73 +576,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		});
 	}
 
-	private void RoomMsgListenerConnection(XMPPConnection connection, String roomName) {
-
-		if (connection != null) {
-			// Add a packet listener to get messages sent to us
-			MultiUserChat multiUserChat = new MultiUserChat(connection, roomName +"@conference.myria");
-			multiUserChat.addMessageListener(new PacketListener() {  
-                @Override  
-                public void processPacket(Packet packet) {  
-                	Message message = (Message) packet;
-                    Log.i("ROOM-CHAT RECEIVE-MESSAGE: ", message.getFrom() + ":" + message.getBody());
-                    //room3@conference.myria/admin@myria/Smack-owner:dggjjk
-                    final String[] fromName = message.getFrom().split("/");
-                    final String msg = message.getBody().toString();
-                    mHandler.post(new Runnable() {
-						@SuppressLint("NewApi")
-						public void run() {
-							// notification or chat...	
-							if (msg.contains(streaminglinkTag)/*equals(streaminglink)*/)	
-								popupReceiveStreamingLinkMessage(msg);
-							else
-								Toast.makeText(faActivity.getApplicationContext(),
-										fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show();
-						}
-					});
-                    //System.out.println(message.getFrom() + ":" + message.getBody());  
-                }  
-            });  
-
-		}
-	}
-	private void ReceiveMsgListenerConnection(XMPPConnection connection) {
-		if (connection != null) {
-			// Add a packet listener to get messages sent to us
-			PacketFilter filter = new MessageTypeFilter(Message.Type.groupchat/*chat*/);
-			connection.addPacketListener(new PacketListener() {
-				@Override
-				public void processPacket(Packet packet) {
-					Message message = (Message) packet;
-					if (message.getBody() != null) {
-						final String[] fromName = StringUtils.parseBareAddress(
-								message.getFrom()).split("@");
-						Log.i("XMPPChatDemoActivity", "Text Recieved "
-								+ message.getBody() + " from " + fromName[0]);
-						messages.add(fromName[0] + ":");
-						messages.add(message.getBody());
-						final String msg = message.getBody().toString();
-						// Add the incoming message to the list view
-						Log.i("XMPPChatDemoActivity", msg);
-						mHandler.post(new Runnable() {
-							@SuppressLint("NewApi")
-							public void run() {
-								// notification or chat...
-								if(msg.contains("drawView")){
-	
-								}else if (msg.contains(streaminglinkTag)/*equals(streaminglink)*/){
-									
-								}else
-									Toast.makeText(faActivity.getApplicationContext(),
-											fromName[0] + ": " + msg,
-											Toast.LENGTH_SHORT).show();
-							}
-						});
-					}
-				}
-			}, filter);
-		}
-	}
 
 	@SuppressWarnings("deprecation")
 	public static void popupReceiveStreamingLinkMessage(String message) {
