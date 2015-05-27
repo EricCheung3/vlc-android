@@ -44,11 +44,8 @@ import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.filter.MessageTypeFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.videolan.libvlc.EventHandler;
 import org.videolan.libvlc.IVideoPlayer;
@@ -85,8 +82,6 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
@@ -276,9 +271,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     /** draw a circle when touch the screen */
 	private PaintView paintView;
 	/** room chat*/
-	MultiRoom mRoom = new MultiRoom();
+	private MultiRoom mRoom;
+	private String invitedRoom;
 	
-    @Override
+	
+    @SuppressWarnings("unchecked")
+	@Override
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -400,10 +398,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         /** TODO:
          * get XMPPConnection [need to reconnect to the server]
-         * and add a PaintView for touch screen*/  
+         * and add a PaintView for touch screen*/ 
+        mRoom = new MultiRoom(this);
 		new GetXMPPConnection().execute();
-
-		
 		
 		textMessage = (EditText) findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button)findViewById(R.id.btn_send_message);
@@ -412,7 +409,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		    
 		    @Override
 		    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-		    	SendMessage("room3");
+		    	mRoom.SendMessage(connection, invitedRoom, textMessage);
 		    	return true;
 		    }
 		});
@@ -420,16 +417,16 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
 			@Override
 			public void onClick(View arg0) {
-				SendMessage("room3");
+				mRoom.SendMessage(connection, invitedRoom, textMessage);
 				}
 		});
 
-		
 		/** draw a circle when users touch the screen */
     	paintView = (PaintView) findViewById(R.id.drawView);		
     	paintView.setVisibility(View.VISIBLE);
     	paintView.setFocusable(true);
     	paintView.setOnTouchListener(paintView);
+    	
     	
         mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
         mSeekbar.setOnSeekBarChangeListener(mSeekListener);
@@ -495,7 +492,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     }
 
     /* send message */
-    public void SendMessage(String room){
+    private void SendMessage(String room){
 
 		MultiUserChat muc = new MultiUserChat(connection, room);  
 		
@@ -510,8 +507,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 				} catch (XMPPException e) {
 					e.printStackTrace();
 				} 
-				Toast.makeText(getApplicationContext(), text,
-						Toast.LENGTH_SHORT).show();
+
 			}
 			textMessage.setText("");
 		}else{
@@ -519,27 +515,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					Toast.LENGTH_SHORT).show();
 		} 
 	}
-//    private void SendMessage2(){
-//
-//		String text = textMessage.getText().toString();
-//		if(!text.equals("")&&text!=null){
-//			Log.i("XMPPChatDemoActivity", "Sending text " + text + " to-VideoStreamingFragment-- " + VideoStreamingFragment.to);
-//			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(VideoStreamingFragment.to, org.jivesoftware.smack.packet.Message.Type.groupchat);
-//			msg.setBody(text);
-//			if (connection != null) {
-//				connection.sendPacket(msg);
-//
-//				Toast.makeText(getApplicationContext(), text,
-//						Toast.LENGTH_SHORT).show();
-//			}
-//			textMessage.setText("");
-//		}else{
-//			Toast.makeText(getApplicationContext(), "The input cannot be null!",
-//					Toast.LENGTH_SHORT).show();
-//		}	    	
-//    
-//    }
-
+    /**Get XMPP Connection */
 	@SuppressWarnings("rawtypes")
 	private class GetXMPPConnection extends AsyncTask {
 		@Override
@@ -558,25 +534,26 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					config.setSASLAuthenticationEnabled(true);
 					connection = new XMPPConnection(config);
 					connection.connect();
-//					Log.i("username", VideoStreamingFragment.username);
 					connection.login(VideoStreamingFragment.username, VideoStreamingFragment.password);
 					// Set the status to available
 					Presence presence = new Presence(Presence.Type.available);
 					connection.sendPacket(presence);
 					// get message listener
-//					ReceiveMsgListenerConnection(connection);
-					/**Room chat receive message listener*/
-					RoomMsgListenerConnection(connection);
+					mRoom.ReceiveMsgListenerConnection(connection);
 					// Inviataion Listener
-					mRoom.InvitationListener(connection);
+					invitedRoom = mRoom.rooom; //good
+					invitedRoom = mRoom.getChatRoom();
+//					mRoom.InvitationListener(connection);
+					Log.i("VIDEOPLAYERACTIVITY-ROOMNAME==JOINROOM",invitedRoom+" success!");// room2015_0526_135012 
 					try {
-
-						if(mRoom.joinChatRoom(connection,"room3"))
-							Log.i("JOINROOM","success!");
-					
+						if(mRoom.joinChatRoom(connection,invitedRoom))
+							Log.i("invitedRoom",invitedRoom+"success");			
 					} catch (XMPPException e) {
 						e.printStackTrace();
 					}
+					
+					/**Room chat receive message listener*/
+//					RoomMsgListenerConnection(connection, invitedRoom);
 				}
 				
 				return connection;
@@ -587,40 +564,45 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 			return connection;
 		}
 	}
-
+	// Room Message Listener
 	private Handler mHandler2 = new Handler();
-	public void RoomMsgListenerConnection(XMPPConnection connection) {
+	private void RoomMsgListenerConnection(XMPPConnection connection, String invitedRoom) {
 
 		if (connection != null) {
+			
 			// Add a packet listener to get messages sent to us
-			final MultiUserChat multiUserChat = new MultiUserChat(connection, "room3"+"@conference.myria");
+			MultiUserChat multiUserChat = new MultiUserChat(connection, invitedRoom+"@conference.myria");
 			multiUserChat.addMessageListener(new PacketListener() {  
                 @Override  
                 public void processPacket(Packet packet) {  
                 	org.jivesoftware.smack.packet.Message message = (org.jivesoftware.smack.packet.Message) packet;
                     Log.i("ROOM-CHAT PLAYER-SIDE RECEIVE-MESSAGE: ", message.getFrom() + ":" + message.getBody());
+                    //room2015_0526_144442@conference.myria/tiger@myria/Smack:      fghh
                     final String[] fromName = message.getFrom().split("/");
 			
                     final String msg = message.getBody().toString();
                     mHandler2.post(new Runnable() {
 						@SuppressLint("NewApi")
 						public void run() {
-							// notification or chat...						
-
-							Toast.makeText(getApplicationContext(),
+							// notification or chat...	
+							if(msg.contains("drawView")){
+								// draw the circle at here
+								/**************
+								Bitmap b = Bitmap.createBitmap(60, 60, Bitmap.Config.ARGB_8888);
+								Canvas c = new Canvas(b);
+								paintView.draw(c);
+								paintView.invalidate();
+								********/
+								Toast.makeText(getApplicationContext(),"redraw", Toast.LENGTH_SHORT).show();
+							}else
+								Toast.makeText(getApplicationContext(),
 										fromName[1]+ "2: " + msg, Toast.LENGTH_SHORT).show();
 						}
-					});
-                    //System.out.println(message.getFrom() + ":" + message.getBody());  
+					});  
                 }  
-            });  
-
-		}
-	}
-	public void ReceiveMsgListenerConnection(XMPPConnection connection) {
-		this.connection = connection;
-		if (connection != null) {
-			// Add a packet listener to get messages sent to us
+            }); 
+			/*
+			//Receive message listener
 			PacketFilter filter = new MessageTypeFilter(org.jivesoftware.smack.packet.Message.Type.groupchat);
 			connection.addPacketListener(new PacketListener() {
 				@Override
@@ -639,13 +621,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 							public void run() {
 								// notification or chat...						
 								if(msg.contains("drawView")){
-									// draw the circle at here
-									/**************
-									Bitmap b = Bitmap.createBitmap(60, 60, Bitmap.Config.ARGB_8888);
-									Canvas c = new Canvas(b);
-									paintView.draw(c);
-									paintView.invalidate();
-									********/
+
 									Toast.makeText(getApplicationContext(),"redraw", Toast.LENGTH_SHORT).show();
 								}else
 									Toast.makeText(getApplicationContext(),
@@ -655,8 +631,11 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					}
 				}
 			}, filter);
+			*/
 		}
 	}
+	
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -737,7 +716,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         // Stop Connection
         /** it should be left room, not disconnect the connection*/
 //        mRoom.stopConnection(connection);
-        mRoom.departChatRoom(connection, "room3");
+        mRoom.departChatRoom(connection, invitedRoom);
     }
 
     @Override
@@ -759,7 +738,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         // Stop Connection
         /** it should be left room, not disconnect the connection*/
 //        mRoom.stopConnection(connection);
-        mRoom.departChatRoom(connection, "room3");
+        mRoom.departChatRoom(connection, invitedRoom);
     }
 
     @Override
@@ -916,9 +895,17 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         if (width * height == 0)
             return;
 
+        if(width>height){
+        	mScreenOrientation = 0;//0:landscape
+        }else
+        	mScreenOrientation = 1;
+        	
+        setRequestedOrientation(mScreenOrientation);
+
+        	
         // store video size
-        mVideoHeight = height;
-        mVideoWidth = width;
+	    mVideoHeight = height;
+	    mVideoWidth = width;
         mVideoVisibleHeight = visible_height;
         mVideoVisibleWidth  = visible_width;
         mSarNum = sar_num;
@@ -2290,7 +2277,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         if(defaultWide) {
             switch (rot) {
             case Surface.ROTATION_0:
-                return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;//SCREEN_ORIENTATION_LANDSCAPE
+                return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;//SCREEN_ORIENTATION_LANDSCAPE
             case Surface.ROTATION_90:
                 return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
             case Surface.ROTATION_180:
@@ -2311,7 +2298,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             case Surface.ROTATION_0:
                 return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
             case Surface.ROTATION_90:
-                return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;//SCREEN_ORIENTATION_LANDSCAPE
+                return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;//SCREEN_ORIENTATION_LANDSCAPE
             case Surface.ROTATION_180:
                 // SCREEN_ORIENTATION_REVERSE_PORTRAIT only available since API
                 // Level 9+

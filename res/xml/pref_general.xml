@@ -62,7 +62,7 @@
         <!-- video_resolution/video_framerate/ -->
 
         <ListPreference
-            android:defaultValue="15"
+            android:defaultValue="24"
             android:entries="@array/videoFramerateArray"
             android:entryValues="@array/videoFramerateValues"
             android:key="video_framerate"

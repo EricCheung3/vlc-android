@@ -655,7 +655,7 @@ public abstract class VideoStream extends MediaStream {
 				//parameters.setRecordingHint(true);//sdk<11 is not supported.
 				mCamera.setDisplayOrientation(mOrientation);
 				//TODO camera preview orientation :spin 90degree == portrait  
-				mCamera.setDisplayOrientation(90);
+//				mCamera.setDisplayOrientation(90);
 				
 				try {
 					if (mMode == MODE_MEDIACODEC_API_2) {
