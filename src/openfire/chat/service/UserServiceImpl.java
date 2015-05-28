@@ -139,6 +139,7 @@ public class UserServiceImpl implements UserService {
 		config.setSendPresence(true);
 		config.setSASLAuthenticationEnabled(true);
 		config.setRosterLoadedAtLogin(true);
+		config.setReconnectionAllowed(true);
 		connection = new XMPPConnection(config);
 		
 		try {
@@ -148,17 +149,6 @@ public class UserServiceImpl implements UserService {
 			e.printStackTrace();
 		}
 		
-//		if (connection ==null || !connection.isAuthenticated()) {
-//			try {
-//				Log.i("GETCONNECTION","connect");
-//				
-//
-//			}catch (XMPPException xe) {
-//				Log.e("GET CONNECTION", xe.toString());
-//				throw new ServiceException(LoginActivity.SERVER_ERROR);
-//			} 
-//			//return connection;
-//		}
 		return connection;
 	}
 	/** check validate of username & email */

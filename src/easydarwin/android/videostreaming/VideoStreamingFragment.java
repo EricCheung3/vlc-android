@@ -21,23 +21,17 @@ import net.majorkernelpanic.streaming.video.VideoQuality;
 import openfire.chat.activity.LoginActivity;
 import openfire.chat.adapter.FriendsAdapter;
 
-import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.Roster;
 import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.filter.MessageTypeFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.provider.PrivacyProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
-import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.GroupChatInvitation;
 import org.jivesoftware.smackx.PrivateDataManager;
 import org.jivesoftware.smackx.bytestreams.socks5.provider.BytestreamsProvider;
-import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.packet.ChatStateExtension;
 import org.jivesoftware.smackx.packet.LastActivity;
 import org.jivesoftware.smackx.packet.OfflineMessageInfo;
@@ -100,7 +94,6 @@ import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import android.widget.Toast;
 
 @SuppressLint("ClickableViewAccessibility")
 public class VideoStreamingFragment extends Fragment implements Callback,
@@ -143,7 +136,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	private List<Map<String, String>> friendList;
 	
 	public static XMPPConnection connection;
-	private String streaminglinkTag = "rtsp://129.128.184.46:8554/";
 	private static String streaminglink="";
 	private String curDateTime;
 
@@ -154,7 +146,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	
 	public static MultiRoom mRoom;
 	private String room = null; // "room3" 
-
 
 	
 	@Override
@@ -173,6 +164,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		preferences = PreferenceManager.getDefaultSharedPreferences(faActivity);
 
 		initView(v);
+
 //		curDateTime = new SimpleDateFormat(
 //				"yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
 //		streaminglink = streaminglinkTag + getDefaultDeviceId()+ curDateTime + ".sdp";
@@ -194,14 +186,22 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			
 		}
 
-		// get message listener
-//		ReceiveMsgListenerConnection(connection);
+		//check for after videoPlaying back to streamingFragment
+		if(!connection.isConnected()){
+			Log.i("0-SECOND-CREATEROOM_BUG","connection == null!");
+			try {
+				connection.connect();
+			} catch (XMPPException e) {
+				e.printStackTrace();
+			}
+		}
 		/** TODO*/
 		/** Invitation Listener */
 		mRoom.InvitationListener(connection);	
-		mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
-//		Log.i("aaaaaaaaaaaaaaaaaa", mRoom.getChatRoom());
-		
+
+		Presence presence = new Presence(Presence.Type.available);
+	    connection.sendPacket(presence);
+
 		
 		btnSelectContact.setOnClickListener(this);
 		btnOption.setOnClickListener(this);
@@ -251,8 +251,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		textMessage = (EditText) v.findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button) v.findViewById(R.id.btn_send_message);
 		
+		//********************
 		// get XMPPConnection if login success
 		connection = LoginActivity.connection;
+
 	}
 
 	@Override
@@ -260,10 +262,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		switch (v.getId()) {
 		case R.id.btnPlay:
 			// get all the friends
-			friendList = getAllFriendsUser(LoginActivity.connection);
-
-			streaminglink = "rtsp://129.128.184.46:8554/live.sdp";
-			
+			friendList = getAllFriendsUser(connection);
+	
 			if (!alive) {
 				// popupContactList();
 				popupContactList(/*entries*/);
@@ -271,7 +271,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			} else {
 				alive = false;
 				stopStream();
-				String msg = connection.getUser()+"-owner disconnected the connection and left the room!";
+				String msg = "Owner disconnected the connection and left the room!";
 				mRoom.SendNotification(connection, room, msg);
 				mRoom.departChatRoom(connection, room);
 				
@@ -291,12 +291,13 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			if (alive) {
 				alive = false;
 				stopStream();
-				String msg = connection.getUser()+"-owner disconnected the connection!";
+				String msg = "Owner disconnected the connection!";
 				mRoom.SendNotification(connection, room, msg);
 				btnSelectContact.setBackgroundResource(R.drawable.play);
 				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
 						Integer.parseInt(mPort), mVideoName));
-				mRoom.stopConnection(connection);
+				// off line
+				mRoom.userOffline(connection);
 			}
 			faActivity.finish();
 
@@ -333,11 +334,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			@Override
 			protected Integer doInBackground(Void... params) {
 
-				publishProgress();
-				// start room message listener in back-end
-				mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
-				Log.i("aaaaaaa",mRoom.getChatRoom());
-				
+				publishProgress();		
 				
 				if (mSession == null) {// try to load video info directly...
 					boolean audioEnable = preferences.getBoolean(
@@ -393,8 +390,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 //				mClient.setStreamPath(String.format("/%s.sdp",preferences.getString("key_device_id", Build.MODEL)));
 				mClient.setStreamPath(String.format("/%s.sdp",mVideoName));
 				
-				/**
-				 * IMPORTANT, start push stream.*/
+				/**IMPORTANT, start push stream.*/
 				mClient.startStream();
 				return 0;
 			}
@@ -403,10 +399,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	}
 
-	/** Add inviation listener in specific class. */
-	
-	
-	
 	
 	private void stopStream() {
 		if (mClient != null) {
@@ -490,8 +482,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		int h = faActivity.getWindowManager().getDefaultDisplay().getHeight();
 		int w = faActivity.getWindowManager().getDefaultDisplay().getWidth();
 
-		//friendList = getFriendsList(entries);
-
 		popFriends = new PopupWindow(v, w - 10, (int) (((2.8) * h) / 4));
 		popFriends.setAnimationStyle(R.style.MyDialogStyleBottom);
 		popFriends.setFocusable(true);
@@ -514,9 +504,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View v, int position,
 					long arg3) {
-				// TODO Auto-generated method stub
-				// TextView name = (TextView)
-				// v.findViewById(R.id.friend_username);
+
 				CheckBox checkbox = (CheckBox) v.findViewById(R.id.check_box);
 				checkbox.toggle();
 
@@ -539,7 +527,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				room = "room" + curDateTime;
 				mRoom.setChatRoom(room);
 				Log.i("MULTIROOM-ROOM",room);
-				
+				/**room message listening in back-end while video is playing */
+				mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());	
 				// START TO PUSH VIDEO
 				PLAYVideoStreaming();
 				Log.i("PLAY", "following should be streainglink====");
@@ -551,12 +540,30 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						Message msg = new Message(room + "@conference.myria",
 								Message.Type.groupchat);
 						msg.setBody(streaminglink);
-						if (connection != null ) 
-							connection.sendPacket(msg);
+						if (!connection.isConnected()){
+							Log.i("1-SECOND-CREATEROOM_BUG","connection is dis-Connected");
+							try {
+								connection.connect();
+								Presence presence = new Presence(Presence.Type.available);
+								connection.sendPacket(presence);
+							} catch (XMPPException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+						}
+						connection.sendPacket(msg);
 					}
 				});			
 				// CREATE CHAT ROOM AND INVITE SELECTED FRIENDS TO JOIN
-				if(selectedListMap.size() > 0){		
+				if(selectedListMap.size() > 0 ){	
+					if(!connection.isConnected()){
+						Log.i("2-SECOND-CREATEROOM_BUG","connection == null!");
+						try {
+							connection.connect();
+						} catch (XMPPException e) {
+							e.printStackTrace();
+						}
+					}
 					try {
 						if(mRoom.createMultiUserRoom(connection, room))
 							mRoom.inviteToChatRoom(connection, room, selectedListMap);
@@ -566,7 +573,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					}
 				}
 
-				}
+			}
 		});
 		Button btn_send_cancel = (Button) v.findViewById(R.id.btn_send_cancel);
 		btn_send_cancel.setOnClickListener(new View.OnClickListener() {
@@ -626,18 +633,16 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		});
 	}
 
-
 	@Override
 	public void onDestroy() {
 		super.onDestroy();	
 		stopStream();
-		mRoom.stopConnection(connection);
+		mRoom.userOffline(connection);
 	}
 	@Override
 	public void onPause() {
 		super.onPause();
 		stopStream();
-		mRoom.stopConnection(connection);
 	}
 
 
@@ -665,7 +670,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		if (mClient != null) {
 			if (bitrate / 1000 < 250)
 //				ipView.setText("	" + bitrate / 1000 + " kbps");
-				ipView.setText(" The current network is not stable !");
+				ipView.setText(" The current network is not stable !  " + bitrate / 1000);
 		}
 	}
 
@@ -1000,14 +1005,14 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	
 	private List<Map<String, String>> getAllFriendsUser(XMPPConnection connection){
-		if(connection ==null)
+		if(connection.isConnected()){
+			Log.i("SECOND_GETUSERS","connection=null");
 			try {
-				connection =this.connection;
 				connection.connect();
 			} catch (XMPPException e) {
-				Log.e("SECOND_GETUSERS","connection=null");
 				e.printStackTrace();
 			}
+		}
 		friendList = new ArrayList<Map<String, String>>();
 		Roster roster11 = connection.getRoster();
 		Collection<RosterEntry> entries11 = roster11.getEntries();

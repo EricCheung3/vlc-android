@@ -494,30 +494,6 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         updateNavStatus();
     }
 
-    /* send message */
-    private void SendMessage(String room){
-
-		MultiUserChat muc = new MultiUserChat(connection, room);  
-		
-		String text = textMessage.getText().toString();
-		if(!text.equals("")&&text!=null){
-
-			org.jivesoftware.smack.packet.Message msg = new org.jivesoftware.smack.packet.Message(muc.getRoom()+"@conference.myria", org.jivesoftware.smack.packet.Message.Type.groupchat);
-			msg.setBody(text);
-			if (connection != null) {
-				try {
-					muc.sendMessage(msg);
-				} catch (XMPPException e) {
-					e.printStackTrace();
-				} 
-
-			}
-			textMessage.setText("");
-		}else{
-			Toast.makeText(getApplicationContext(), "The input cannot be null!",
-					Toast.LENGTH_SHORT).show();
-		} 
-	}
     /**Get XMPP Connection */
 	@SuppressWarnings("rawtypes")
 	private class GetXMPPConnection extends AsyncTask {
@@ -640,10 +616,6 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             mPresentation = null;
         }
         
-        // Stop Connection
-        /** it should be left room, not disconnect the connection*/
-//        mRoom.stopConnection(connection);
-        mRoom.departChatRoom(connection, invitedRoom);
     }
 
     @Override
@@ -662,10 +634,6 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         mAudioManager = null;
         
-        // Stop Connection
-        /** it should be left room, not disconnect the connection*/
-//        mRoom.stopConnection(connection);
-        mRoom.departChatRoom(connection, invitedRoom);
     }
 
     @Override
