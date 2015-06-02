@@ -670,7 +670,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		if (mClient != null) {
 			if (bitrate / 1000 < 250)
 //				ipView.setText("	" + bitrate / 1000 + " kbps");
-				ipView.setText(" The current network is not stable !  " + bitrate / 1000);
+				ipView.setText(" The current network is not stable !  " + bitrate / 1000 +" kbps");
+			if (bitrate / 1000 < 150)
+				// stop streaming 
+				// destroy chat room
+				ipView.setText("Cannot streaming because of unstable network");
 		}
 	}
 
@@ -1005,7 +1009,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	
 	private List<Map<String, String>> getAllFriendsUser(XMPPConnection connection){
-		if(connection.isConnected()){
+		if(!connection.isConnected()){
 			Log.i("SECOND_GETUSERS","connection=null");
 			try {
 				connection.connect();
@@ -1013,6 +1017,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				e.printStackTrace();
 			}
 		}
+		
 		friendList = new ArrayList<Map<String, String>>();
 		Roster roster11 = connection.getRoster();
 		Collection<RosterEntry> entries11 = roster11.getEntries();

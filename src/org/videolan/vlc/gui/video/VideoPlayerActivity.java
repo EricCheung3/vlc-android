@@ -38,7 +38,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
-import openfire.chat.activity.LoginActivity;
 import openfire.chat.service.UserServiceImpl;
 
 import org.jivesoftware.smack.ConnectionConfiguration;
@@ -264,7 +263,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private boolean mIsNavMenu = false;
     
     /**Send message while video is playing*/
-    UserServiceImpl serveice;
+//    UserServiceImpl serveice;
 	private XMPPConnection connection;
     private EditText textMessage;
     private Button btnSendMessage;
@@ -522,6 +521,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
 					Log.i("VIDEOPLAYERACTIVITY-ROOMNAME",invitedRoom+" success!");
 					
+					PAINTViewRoomMsgListener(connection, invitedRoom);
+					
 					try {
 						if(mRoom.joinChatRoom(connection,invitedRoom))
 							Log.i("invitedRoom",invitedRoom+"success");			
@@ -539,6 +540,59 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		}
 	}	
 
+	// draw circle on surfaceView
+	private void PAINTViewRoomMsgListener(XMPPConnection connection, String roomName) {
+
+		if(!connection.isConnected()) {
+			try {
+				connection.connect();
+			} catch (XMPPException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		// Add a packet listener to get messages sent to us
+		MultiUserChat muc = new MultiUserChat(connection, roomName +"@conference.myria");
+		muc.addMessageListener(new PacketListener() {  
+            @Override  
+            public void processPacket(Packet packet) {  
+            	org.jivesoftware.smack.packet.Message message = (org.jivesoftware.smack.packet.Message) packet;
+                Log.i("PAINTViewRoomMsgListener ", message.getFrom() + ":" + message.getBody());
+                //room3@conference.myria/admin@myria/Smack-owner:dggjjk
+                final String[] fromName = message.getFrom().split("/");
+                final String msg = message.getBody().toString();
+                mHandler.post(new Runnable() {
+					@SuppressLint("NewApi")
+					public void run() {
+						// notification or chat...	
+						if(msg.equals("PaintView")){
+							String[] coordination = msg.split(",");
+							Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
+							
+							/** redraw circle on surfaceView 
+							 *  Does it need to start a new thread ???
+							 */
+							/**
+							Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+							paint.setColor(Color.RED);
+						    paint.setStyle(Style.STROKE);
+							if (mSurfaceHolder.getSurface().isValid()) {
+								Log.i("ddddddddddddd ", "ddddddddddddd");
+				                Canvas canvas = mSurfaceHolder.lockCanvas();
+				                canvas.drawColor(Color.BLACK);
+				                canvas.drawCircle(Float.parseFloat(coordination[1]), Float.parseFloat(coordination[2]), 50, paint);
+				                mSurfaceHolder.unlockCanvasAndPost(canvas);
+				            }else
+				            	Log.i("........", ".................");
+							*/
+						} 
+					}
+				}); 
+            }  
+        });  
+	}
+	
+	
     @Override
     protected void onPause() {
         super.onPause();

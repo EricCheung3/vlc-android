@@ -29,16 +29,12 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Paint.Style;
 import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.view.View;
-import android.view.View.OnTouchListener;
 
 /**
  * An enhanced SurfaceView in which the camera preview will be rendered. 
@@ -92,18 +88,12 @@ public class SurfaceView extends android.view.SurfaceView implements Runnable, S
 
 	// Allows to force the aspect ratio of the preview
 	private ViewAspectRatioMeasurer mVARM = new ViewAspectRatioMeasurer();
-	
-//    private SurfaceHolder surfaceHolder;
-//    private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     
 	public SurfaceView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mHandler = new Handler();
 		getHolder().addCallback(this);
-		/**for touch event */
-//		surfaceHolder = getHolder();
-//        paint.setColor(Color.RED);
-//        paint.setStyle(Style.STROKE);
+
 	}	
 
 	public void setAspectRatioMode(int mode) {
@@ -153,7 +143,7 @@ public class SurfaceView extends android.view.SurfaceView implements Runnable, S
 		mLock.release();
 
 		try {
-			long ts = 0, oldts = 0;
+			long ts = 0 /*, oldts = 0*/;
 			while (mRunning) {
 				synchronized (mSyncObject) {
 					mSyncObject.wait(2500);
@@ -168,7 +158,7 @@ public class SurfaceView extends android.view.SurfaceView implements Runnable, S
 						if (mCodecSurfaceManager != null) {
 							mCodecSurfaceManager.makeCurrent();
 							mTextureManager.drawFrame();
-							oldts = ts;
+							//oldts = ts;
 							ts = mTextureManager.getSurfaceTexture().getTimestamp();
 							//Log.d(TAG,"FPS: "+(1000000000/(ts-oldts)));
 							mCodecSurfaceManager.setPresentationTime(ts);
@@ -352,23 +342,5 @@ public class SurfaceView extends android.view.SurfaceView implements Runnable, S
 	  canvas.drawText("PREVIEW", canvas.getWidth() / 2, canvas.getHeight() / 2, p);
 	  System.out.println("draw..........");
 	 }
-	/*
-	private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-	float mX;
-	float mY;	
-	
-	@Override
-	public boolean onTouch(View v, MotionEvent event) {
-		switch(event.getAction()){
-			// When user touches the screen
-			case MotionEvent.ACTION_DOWN:
-				// Getting X coordinate
-				mX = event.getX();				
-				mY = event.getY();	
-				System.out.println("onTouch..........");
-				break;
-		}
-		return true;
-	}
-*/
+
 }

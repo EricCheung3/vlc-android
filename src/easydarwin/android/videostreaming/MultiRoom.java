@@ -11,12 +11,9 @@ import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.filter.MessageTypeFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.Form;
 import org.jivesoftware.smackx.muc.InvitationListener;
 import org.jivesoftware.smackx.muc.MultiUserChat;
@@ -200,7 +197,7 @@ public class MultiRoom {
     					if (message.getBody() != null) {
     						Log.i("INVITATION-MULTI-ROOM RECEIVE MESSAGE:", "Text Recieved "
     								+ message.getBody() + " from " + message.getFrom());
-    						final String[] fromName = message.getFrom().split("@");
+//    						final String[] fromName = message.getFrom().split("@");
     						final String msg = message.getBody().toString();
     						mHandler.post(new Runnable() {
     							@SuppressLint("NewApi")
@@ -223,7 +220,7 @@ public class MultiRoom {
 	/** ROOM message Listener*/
 	public void RoomMsgListenerConnection(XMPPConnection connection, String roomName) {
 
-		if (!connection.isConnected()) {
+		if(!connection.isConnected()) {
 			Log.i("SECOND-MULTIROOM-RoomMsgListenerConnection","connection == null! disconnected");
 			try {
 				connection.connect();
@@ -246,7 +243,11 @@ public class MultiRoom {
 					@SuppressLint("NewApi")
 					public void run() {
 						// notification or chat...	
-						Toast.makeText(context,fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show();
+						if(msg.equals("PaintView")){
+							String[] coordination = msg.split(",");
+							Toast.makeText(context,fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
+						}else
+							Toast.makeText(context,fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show();
 					}
 				}); 
             }  
