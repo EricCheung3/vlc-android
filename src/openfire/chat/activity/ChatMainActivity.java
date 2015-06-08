@@ -338,7 +338,7 @@ public class ChatMainActivity extends Activity {
 				popStreamingLink.dismiss();
 			}
 		});
-		Button btn_cancel = (Button) v.findViewById(R.id.btn_cancle);
+		Button btn_cancel = (Button) v.findViewById(R.id.btn_cancel);
 		btn_cancel.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				popStreamingLink.dismiss();

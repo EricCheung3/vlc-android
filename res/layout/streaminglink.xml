@@ -1,22 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="100dp"
     android:orientation="vertical" >
 
     <RelativeLayout
         android:layout_width="fill_parent"
-        android:layout_height="50dp"
+        android:layout_height="100dp"
         android:layout_marginTop="250dp"
         android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/streaming_sender"
+            android:layout_width="fill_parent"
+            android:layout_height="50dp"
+            android:singleLine="true"
+            android:textColor="#FF0000" />
 
         <TextView
             android:id="@+id/streaming_link"
             android:layout_width="fill_parent"
             android:layout_height="50dp"
             android:singleLine="true"
-            android:textColor="#FF0000" />
+            android:textColor="#FF0000"
+            android:layout_below="@+id/streaming_sender" />
     </RelativeLayout>
 
     <RelativeLayout
@@ -29,16 +37,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
-            android:textStyle="bold"
-            android:text="Play" />
+            android:text="Play"
+            android:layout_marginLeft="50dp"
+            android:textStyle="bold" />
 
         <Button
-            android:id="@+id/btn_cancle"
+            android:id="@+id/btn_cancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
             android:layout_alignParentRight="true"
-            android:text="Cancle" />
+            android:layout_centerInParent="true"
+            android:text="Cancel"
+            android:layout_marginRight="50dp" />
     </RelativeLayout>
 
 </LinearLayout>

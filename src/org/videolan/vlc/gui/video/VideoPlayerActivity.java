@@ -128,7 +128,6 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import easydarwin.android.videostreaming.MultiRoom;
-import easydarwin.android.videostreaming.PaintView;
 import easydarwin.android.videostreaming.VideoStreamingFragment;
 
 @SuppressLint("ClickableViewAccessibility")
@@ -263,13 +262,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private boolean mIsNavMenu = false;
     
     /**Send message while video is playing*/
-//    UserServiceImpl serveice;
 	private XMPPConnection connection;
     private EditText textMessage;
     private Button btnSendMessage;
     
     /** draw a circle when touch the screen */
-	private PaintView paintView;
+//	private PaintView paintView;
 	/** room chat*/
 	private MultiRoom mRoom;
 	private String invitedRoom;
@@ -424,10 +422,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		});
 
 		/** draw a circle when users touch the screen */
-    	paintView = (PaintView) findViewById(R.id.drawView);		
-    	paintView.setVisibility(View.VISIBLE);
-    	paintView.setFocusable(true);
-    	paintView.setOnTouchListener(paintView);
+//    	paintView = (PaintView) findViewById(R.id.drawView);		
+//    	paintView.setVisibility(View.VISIBLE);
+//    	paintView.setFocusable(true);
+//    	paintView.setOnTouchListener(paintView);
     	
     	
         mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
@@ -520,7 +518,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					invitedRoom = mRoom.getChatRoom();
 					mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
 					Log.i("VIDEOPLAYERACTIVITY-ROOMNAME",invitedRoom+" success!");
-					
+					// draw circle on screen according the coordination
 					PAINTViewRoomMsgListener(connection, invitedRoom);
 					
 					try {
@@ -540,7 +538,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		}
 	}	
 
-	// draw circle on surfaceView
+	/*** draw circle on surfaceView */
 	private void PAINTViewRoomMsgListener(XMPPConnection connection, String roomName) {
 
 		if(!connection.isConnected()) {
@@ -566,25 +564,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					public void run() {
 						// notification or chat...	
 						if(msg.equals("PaintView")){
-							String[] coordination = msg.split(",");
-							Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
+//							String[] coordination = msg.split(",");
+//							Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
 							
-							/** redraw circle on surfaceView 
-							 *  Does it need to start a new thread ???
-							 */
-							/**
-							Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-							paint.setColor(Color.RED);
-						    paint.setStyle(Style.STROKE);
-							if (mSurfaceHolder.getSurface().isValid()) {
-								Log.i("ddddddddddddd ", "ddddddddddddd");
-				                Canvas canvas = mSurfaceHolder.lockCanvas();
-				                canvas.drawColor(Color.BLACK);
-				                canvas.drawCircle(Float.parseFloat(coordination[1]), Float.parseFloat(coordination[2]), 50, paint);
-				                mSurfaceHolder.unlockCanvasAndPost(canvas);
-				            }else
-				            	Log.i("........", ".................");
-							*/
 						} 
 					}
 				}); 
@@ -592,7 +574,43 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         });  
 	}
 	
-	
+	/*
+	private class reDrawCircle implements Runnable{
+
+		@Override
+		public void run() {
+			Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint.setColor(Color.RED);
+		    paint.setStyle(Style.STROKE);
+			if (mSurfaceHolder.getSurface().isValid()) {
+				Log.i("ddddddddddddd ", "ddddddddddddd");
+                Canvas canvas = mSurfaceHolder.lockCanvas();
+                canvas.drawColor(Color.BLACK);
+                canvas.drawCircle(100, 100, 50, paint);
+                mSurfaceHolder.unlockCanvasAndPost(canvas);
+            }else
+            	Log.i("........", ".................");
+			Message msg = new Message();
+			msg.what = 1;
+			drawHandler.sendMessage(msg);
+		}
+		@SuppressLint("HandlerLeak")
+		private Handler drawHandler = new Handler(){
+			
+			 @Override
+			 public void handleMessage(Message msg) {
+				 switch(msg.what){
+				 case 1:
+					 Log.i("DRAW-CIRCLE ", "success!");
+					 break;
+				 default:
+					 
+					 break;
+				 }
+			 }
+		};
+	}
+	*/
     @Override
     protected void onPause() {
         super.onPause();
@@ -843,11 +861,11 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     public void setSurfaceSize(int width, int height, int visible_width, int visible_height, int sar_num, int sar_den) {
         if (width * height == 0)
             return;
-
-        if(width>height){
-        	mScreenOrientation = 0;//0:landscape
-        }else
-        	mScreenOrientation = 1;
+// rotation on player-side's surface view
+//        if(width>height){
+//        	mScreenOrientation = 0;//0:landscape
+//        }else
+//        	mScreenOrientation = 1;
         	
         setRequestedOrientation(mScreenOrientation);
 

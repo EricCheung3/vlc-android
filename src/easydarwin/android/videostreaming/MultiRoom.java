@@ -3,11 +3,7 @@ package easydarwin.android.videostreaming;
 import java.util.ArrayList;
 import java.util.List;
 
-import openfire.chat.activity.LoginActivity;
-import openfire.chat.service.UserServiceImpl;
-
 import org.jivesoftware.smack.Connection;
-import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -20,7 +16,6 @@ import org.jivesoftware.smackx.muc.MultiUserChat;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.EditText;
@@ -31,7 +26,6 @@ public class MultiRoom {
 	private Activity context;
 	private String room1 = null;
 	private String rooom;
-	private String invitedRoom;
 	
 	
 	private String streaminglinkTag = "rtsp://129.128.184.46:8554/";
@@ -51,7 +45,7 @@ public class MultiRoom {
 	
 	/**Create chat room*/
 	public boolean createMultiUserRoom(XMPPConnection connection,
-			String roomName/*, ArrayList<String> friendlist*/) throws XMPPException {
+			String roomName) throws XMPPException {
 		//check for after videoPlaying back to streamingFragment
 		if(!connection.isConnected()){
 			Log.i("createMultiUserRoom-SECOND-CREATEROOM_BUG","connection == null!");
@@ -63,7 +57,7 @@ public class MultiRoom {
 		}
 		// Get the MultiUserChatManager
 		// Create a MultiUserChat using an XMPPConnection for a room
-		MultiUserChat muc = new MultiUserChat(connection, roomName + "@conference.myria"); // TODO bug
+		MultiUserChat muc = new MultiUserChat(connection, roomName + "@conference.myria"); 
 
 		// Create the room
 		muc.create(roomName);
@@ -76,18 +70,15 @@ public class MultiRoom {
 		List<String> roomOwner = new ArrayList<String>();
 		roomOwner.add(connection.getUser());
 		submitForm.setAnswer("muc#roomconfig_roomowners", roomOwner);
-		
         submitForm.setAnswer("muc#roomconfig_persistentroom", false);   
         submitForm.setAnswer("muc#roomconfig_membersonly", false);  
-        submitForm.setAnswer("muc#roomconfig_allowinvites", true);  
-        //submitForm.setAnswer("muc#roomconfig_passwordprotectedroom", false);  	        
+        submitForm.setAnswer("muc#roomconfig_allowinvites", true);          
         submitForm.setAnswer("muc#roomconfig_enablelogging", true);  
         submitForm.setAnswer("x-muc#roomconfig_reservednick", true);  
         submitForm.setAnswer("x-muc#roomconfig_canchangenick", true);  
         submitForm.setAnswer("x-muc#roomconfig_registration", true);  
         
 		muc.sendConfigurationForm(submitForm);
-
 		Log.i("CREATE_ROOM", roomName);
 		
 		return true;
@@ -103,39 +94,11 @@ public class MultiRoom {
 					+ "@conference.myria");
 			muc.join(connection.getUser());
 			Log.i("JOIN-USER-NAME",connection.getUser());
-			/*
-			// receive chat room message
-			muc.addMessageListener(new PacketListener() {  
-                @Override  
-                public void processPacket(Packet packet) {
-					Message message = (Message) packet;		 
-					if (message.getBody() != null) {
-						
-						Log.i("JOIN-MULTI-ROOM-RECEIVE-MESSAGE: ", "Text Recieved "
-								+ message.getBody() + " from " + message.getFrom());
-						final String[] fromName =message.getFrom().split("@");
-						final String msg = message.getBody().toString();
-						mHandler.post(new Runnable() {
-							@SuppressLint("NewApi")
-							public void run() {
-								// notification or chat...
-								if (msg.contains("rtsp://129.128.184.46:8554/")//equals(streaminglink))	
-									VideoStreamingFragment.popupReceiveStreamingLinkMessage(msg);
-								else  if(msg.contains("drawView")){
-									// to do something
-								}else
-									Toast.makeText(context, fromName[0] + ": " + msg,
-											Toast.LENGTH_SHORT).show();
-							}
-						});
-					}
-				}  
-	        });  */
+
 			return true;
 		}
 		else
 			return false;
-
 	}
 	
 	/** Invite users to a chat room
@@ -143,8 +106,6 @@ public class MultiRoom {
 	public boolean inviteToChatRoom(XMPPConnection connection, String roomName, ArrayList<String> friendsList) throws XMPPException {
 
 		if(connection != null){
-			// Get the MultiUserChatManager
-			// Create a MultiUserChat using an XMPPConnection for a room
 			MultiUserChat muc = new MultiUserChat(connection, roomName
 					+ "@conference.myria");
 			muc.join(connection.getUser()+"-owner");
@@ -176,11 +137,9 @@ public class MultiRoom {
 		MultiUserChat.addInvitationListener(connection, new InvitationListener(){		
 			@Override
 			public void invitationReceived(Connection conn, String Aroom,  
-                    String inviter, String reason, String password, Message message) {
+                   String inviter, String reason, String password, Message message) {
 				room1 = Aroom.split("@")[0];
 				setChatRoom(room1); // userB.Room = userA.Room if userA.Room!=null
-				Log.i("RECEIVE_INVITATION", "chat-room:"+room1+"/"+"inviter:"+inviter);
-//				conn = connection;
 				//accepted by default//must be room name without "@conference.myria"
 				MultiUserChat multiUserChat = new MultiUserChat(conn, Aroom);    
                 try {  
@@ -189,6 +148,7 @@ public class MultiRoom {
                 } catch (XMPPException e) {  
                     e.printStackTrace();  
                 }  
+                final String inviterr = inviter;
                // streaming link listener
                 multiUserChat.addMessageListener(new PacketListener() {  
                     @Override  
@@ -197,16 +157,15 @@ public class MultiRoom {
     					if (message.getBody() != null) {
     						Log.i("INVITATION-MULTI-ROOM RECEIVE MESSAGE:", "Text Recieved "
     								+ message.getBody() + " from " + message.getFrom());
-//    						final String[] fromName = message.getFrom().split("@");
     						final String msg = message.getBody().toString();
     						mHandler.post(new Runnable() {
     							@SuppressLint("NewApi")
     							public void run() {
     								// notification or chat...
-    								if (msg.contains(streaminglinkTag)/*equals(streaminglink)*/)	
-    									VideoStreamingFragment.popupReceiveStreamingLinkMessage(msg);
+    								if (msg.contains(streaminglinkTag))	
+    									VideoStreamingFragment.popupReceiveStreamingLinkMessage(inviterr, msg);
     								else
-    									Toast.makeText(context,"Invitation ELSE (not streaming link because didn't play streaming): " + msg,
+    									Toast.makeText(context,/*"Invitation ELSE (not streaming link because didn't play streaming): " +*/ msg,
     											Toast.LENGTH_SHORT).show();
     							}
     						});
@@ -244,8 +203,8 @@ public class MultiRoom {
 					public void run() {
 						// notification or chat...	
 						if(msg.equals("PaintView")){
-							String[] coordination = msg.split(",");
-							Toast.makeText(context,fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
+//							String[] coordination = msg.split(",");
+//							Toast.makeText(context,fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
 						}else
 							Toast.makeText(context,fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show();
 					}
@@ -253,41 +212,6 @@ public class MultiRoom {
             }  
         });  
 	}
-	
-	
-	/*
-	public void ReceiveMsgListenerConnection(XMPPConnection connection) {
-		if (connection != null) {
-			// Add a packet listener to get messages sent to us
-			PacketFilter filter = new MessageTypeFilter(Message.Type.groupchat);
-			connection.addPacketListener(new PacketListener() {
-				@Override
-				public void processPacket(Packet packet) {
-					Message message = (Message) packet;
-					if (message.getBody() != null) {
-						final String[] fromName = StringUtils.parseBareAddress(
-								message.getFrom()).split("@");
-						Log.i("RECEIVE-MESSAGE-LISTENER", "Text Recieved "
-								+ message.getBody() + " from " + fromName[0]);
-
-						final String msg = message.getBody().toString();
-						mHandler.post(new Runnable() {
-							@SuppressLint("NewApi")
-							public void run() {
-								// notification or chat...
-								if(msg.contains("drawView")){
-
-								}else 
-									Toast.makeText(context,	fromName[0] + ": " + msg,
-											Toast.LENGTH_SHORT).show();
-							}
-						});
-					}
-				}
-			}, filter);
-		}
-	}*/
-	
 	
 	/**Send message function*/
 	public void SendMessage(XMPPConnection connection, String room, EditText textMessage){
@@ -303,13 +227,11 @@ public class MultiRoom {
 		}
 		if(room!=null){
 			MultiUserChat muc = new MultiUserChat(connection, room);  
-			
 			String text = textMessage.getText().toString();
 			if(!text.equals("")&&text!=null){
 				
 				Message message = new Message(room + "@conference.myria",Message.Type.groupchat);  
 	            message.setBody(text);  
-				
 				try {
 					if (muc != null) {
 						muc.sendMessage(message);
@@ -399,52 +321,4 @@ public class MultiRoom {
 		return true;    
 	}
 
-	
-    /**Get XMPP Connection */
-	@SuppressWarnings("rawtypes")
-	public class GetXMPPConnection extends AsyncTask {
-		XMPPConnection connection = LoginActivity.connection;
-		@Override
-		protected XMPPConnection doInBackground(Object... urls) {
-			
-			try {
-				if (null == connection || !connection.isAuthenticated()) {
-					XMPPConnection.DEBUG_ENABLED = true;
-
-					ConnectionConfiguration config = new ConnectionConfiguration(
-							UserServiceImpl.SERVER_HOST,
-							UserServiceImpl.SERVER_PORT,
-							UserServiceImpl.SERVER_NAME);
-					config.setReconnectionAllowed(true);
-					config.setSendPresence(true);
-					config.setSASLAuthenticationEnabled(true);
-					connection = new XMPPConnection(config);
-					connection.connect();
-					connection.login(VideoStreamingFragment.username, VideoStreamingFragment.password);
-					// Set the status to available
-					Presence presence = new Presence(Presence.Type.available);
-					connection.sendPacket(presence);
-					// Inviataion Listener
-					InvitationListener(connection);	
-					invitedRoom = getChatRoom();
-					RoomMsgListenerConnection(connection, getChatRoom());
-					Log.i("VIDEOPLAYERACTIVITY-ROOMNAME",invitedRoom+" success!");
-					
-					try {
-						if(joinChatRoom(connection,invitedRoom))
-							Log.i("invitedRoom",invitedRoom+"success");			
-					} catch (XMPPException e) {
-						e.printStackTrace();
-					}
-				}
-				
-				return connection;
-			} catch (XMPPException e) {
-				e.printStackTrace();
-			}
-
-			return connection;
-		}
-	}	
-	
 }

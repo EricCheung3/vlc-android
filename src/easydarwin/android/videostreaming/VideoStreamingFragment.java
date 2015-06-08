@@ -101,8 +101,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		OnClickListener {
 	
 	private static final int REQUEST_SETTING = 1000;
-	// current system info msg
-	private static final int msgKey1 = 1;
+	// display current time 
+	private static final int DISPLAY = 1;
 
 	private BroadcastReceiver mReceiver;
 	private String mAddress;
@@ -181,8 +181,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		} else {
 //			streaminglink = String.format("rtsp://%s:%d/%s.sdp", mAddress,
 //					Integer.parseInt(mPort), mVideoName);
-			ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
-					Integer.parseInt(mPort), mVideoName));
+//			ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress, Integer.parseInt(mPort), mVideoName));
 			
 		}
 
@@ -198,14 +197,13 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		/** TODO*/
 		/** Invitation Listener */
 		mRoom.InvitationListener(connection);	
-
+		// send available after return from VideoPlayerActivity.java
 		Presence presence = new Presence(Presence.Type.available);
 	    connection.sendPacket(presence);
 
-		
 		btnSelectContact.setOnClickListener(this);
-		btnOption.setOnClickListener(this);
-		btnStop.setOnClickListener(this);
+//		btnOption.setOnClickListener(this);
+//		btnStop.setOnClickListener(this);
 		btnSendMessage.setOnClickListener(this);
 		// EditText: set android keyboard enter button as send button
 		textMessage.setOnEditorActionListener(new OnEditorActionListener() {	    
@@ -236,25 +234,22 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		mSurfaceView.setAspectRatioMode(SurfaceView.ASPECT_RATIO_PREVIEW);
 		surfaceHolder = mSurfaceView.getHolder();
 		surfaceHolder.addCallback(this);
-		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);// needed
-																		// for
-																		// sdk<11
+		// needed for sdk < 11 
+		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+		
 		btnSelectContact = (Button) v.findViewById(R.id.btnPlay);
-		btnOption = (Button) v.findViewById(R.id.btnOptions);
-		btnStop = (Button) v.findViewById(R.id.btnStop);
+//		btnOption = (Button) v.findViewById(R.id.btnOptions);
+//		btnStop = (Button) v.findViewById(R.id.btnStop);
 
 		//get username & password for [VideoPlayerActivity] reconnect to the  XMPP server
 		username = faActivity.getIntent().getStringExtra("username");
 		password = faActivity.getIntent().getStringExtra("password");
-//		entries = faActivity.getIntent().getStringExtra("entries");
-
+		// send message 
 		textMessage = (EditText) v.findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button) v.findViewById(R.id.btn_send_message);
-		
-		//********************
-		// get XMPPConnection if login success
-		connection = LoginActivity.connection;
 
+		//get XMPPConnection if login success
+		connection = LoginActivity.connection;
 	}
 
 	@Override
@@ -265,43 +260,45 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			friendList = getAllFriendsUser(connection);
 	
 			if (!alive) {
-				// popupContactList();
+				// popup ContactList and select to send invitation
 				popupContactList(/*entries*/);
 
 			} else {
 				alive = false;
 				stopStream();
-				String msg = "Owner disconnected the connection and left the room!";
+				String msg = "Owner destroyed the room!";
+				//send disconnect connection notifiation
 				mRoom.SendNotification(connection, room, msg);
+				// leave the chat room
 				mRoom.departChatRoom(connection, room);
 				
 				btnSelectContact.setBackgroundResource(R.drawable.play);
-				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
-						Integer.parseInt(mPort), mVideoName));
+				ipView.setText("");
+//				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,Integer.parseInt(mPort), mVideoName));
 			}
 
 			break;
-		case R.id.btnOptions:
-			Intent intent = new Intent();
-			intent.setClass(faActivity, SettingsActivity.class);
-			startActivityForResult(intent, REQUEST_SETTING);
-
-			break;
-		case R.id.btnStop:
-			if (alive) {
-				alive = false;
-				stopStream();
-				String msg = "Owner disconnected the connection!";
-				mRoom.SendNotification(connection, room, msg);
-				btnSelectContact.setBackgroundResource(R.drawable.play);
-				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
-						Integer.parseInt(mPort), mVideoName));
-				// off line
-				mRoom.userOffline(connection);
-			}
-			faActivity.finish();
-
-			break;
+//		case R.id.btnOptions:
+//			Intent intent = new Intent();
+//			intent.setClass(faActivity, SettingsActivity.class);
+//			startActivityForResult(intent, REQUEST_SETTING);
+//
+//			break;
+//		case R.id.btnStop:
+//			if (alive) {
+//				alive = false;
+//				stopStream();
+//				String msg = "Owner disconnected the connection!";
+//				mRoom.SendNotification(connection, room, msg);
+//				btnSelectContact.setBackgroundResource(R.drawable.play);
+//				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
+//						Integer.parseInt(mPort), mVideoName));
+//				// off line
+//				mRoom.userOffline(connection);
+//			}
+//			faActivity.finish();
+//
+//			break;
 		case R.id.btn_send_message:
 			mRoom.SendMessage(connection, room, textMessage);
 			break;
@@ -380,7 +377,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						mClient.setTransportMode(RtspClient.TRANSPORT_UDP);
 					}
 
-					// mClient.setTransportMode(RtspClient.TRANSPORT_TCP);
 					mClient.setSession(mSession);
 					mClient.setCallback(VideoStreamingFragment.this);
 				}
@@ -396,7 +392,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			}
 
 		}.execute();
-
 	}
 
 	
@@ -424,7 +419,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				try {
 					Thread.sleep(1000);
 					android.os.Message msg = new android.os.Message();
-					msg.what = msgKey1;
+					msg.what = DISPLAY;
 					mHandler.sendMessage(msg);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -439,7 +434,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			public void handleMessage(android.os.Message msg) {
 				super.handleMessage(msg);
 				switch (msg.what) {
-				case msgKey1:
+				case DISPLAY:
 					String curDateTime = new SimpleDateFormat(
 							"yyyy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime());
 					mTime.setText(curDateTime);
@@ -452,26 +447,14 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		};
 	}
 
-
-	private ArrayList<String> messages = new ArrayList<String>();
 	private Handler mHandler = new Handler();
-	private ListView listview;
 	private EditText textMessage;
 	private static Button btn_Send;
-	// private Button btn_Cancel;
 	private ListView friendlistView;
 	private PopupWindow popFriends;
 	private static PopupWindow popStreamingLink;
 	private FriendsAdapter friendsAdapter;
-
 	private ArrayList<String> selectedListMap = new ArrayList<String>();
-
-	//
-	private void MessageAdapter() {
-		ArrayAdapter<String> adapter = new ArrayAdapter<String>(faActivity,
-				R.layout.listitem, messages);
-		listview.setAdapter(adapter);
-	}
 
 	// Select Fiends to Share the video
 	@SuppressWarnings("deprecation")
@@ -489,7 +472,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		new Handler().postDelayed(new Runnable() {
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
 				popFriends.showAtLocation(v, Gravity.BOTTOM, 0, 0);
 			}
 		}, 1000L);
@@ -583,9 +565,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		});
 	}
 
-
+	// receive video streaming link listener
 	@SuppressWarnings("deprecation")
-	public static void popupReceiveStreamingLinkMessage(String message) {
+	public static void popupReceiveStreamingLinkMessage(String inviter, String message) {
 
 		final View v = faActivity.getLayoutInflater().inflate(R.layout.streaminglink,
 				null, false);
@@ -600,13 +582,16 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		new Handler().postDelayed(new Runnable() {
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
 				popStreamingLink.showAtLocation(v, Gravity.BOTTOM, 0, 0);
 			}
 		}, 1000L);
 
+		TextView stramingSender = (TextView) v.findViewById(R.id.streaming_sender);
+		stramingSender.setText("invitation from: "+inviter);
+		
 		TextView stramingLink = (TextView) v.findViewById(R.id.streaming_link);
-		stramingLink.setText(message);
+		String[] subject = message.split("8554/");
+		stramingLink.setText("subject: "+subject[1]);
 		btn_Send = (Button) v.findViewById(R.id.btn_play_streaming);
 		btn_Send.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
@@ -625,12 +610,48 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				popStreamingLink.dismiss();
 			}
 		});
-		Button btn_cancel = (Button) v.findViewById(R.id.btn_cancle);
+		Button btn_cancel = (Button) v.findViewById(R.id.btn_cancel);
 		btn_cancel.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				popStreamingLink.dismiss();
 			}
 		});
+	}
+
+
+	// get all friends
+	private List<Map<String, String>> getAllFriendsUser(XMPPConnection connection){
+		if(!connection.isConnected()){
+			Log.i("SECOND_GETUSERS","connection=null");
+			try {
+				connection.connect();
+			} catch (XMPPException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		friendList = new ArrayList<Map<String, String>>();
+		Roster roster11 = connection.getRoster();
+		Collection<RosterEntry> entries11 = roster11.getEntries();
+		
+		for (RosterEntry entry : entries11) {
+			Presence presence = roster11.getPresence(entry.getUser()); 
+			Map<String, String> map = new HashMap<String, String>();
+			if(presence.isAvailable()){
+				map.put("status", "online");
+				Log.i("VideoStreaming",entry.getUser() + "--online");
+	        }else{
+	        	map.put("status", "offline");
+	        	Log.i("VideoStreaming",entry.getUser() + "--offline");
+	        }
+
+			map.put("name", entry.getName());
+			map.put("username", entry.getUser());
+			
+			friendList.add(map);
+		}
+		
+		return friendList;
 	}
 
 	@Override
@@ -650,15 +671,15 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		switch (state) {
 		case EasyCameraApp.STATE_DISCONNECTED:
-			ipView.setText(null);
+//			ipView.setText(null);
 			break;
 		case EasyCameraApp.STATE_CONNECTED:
-			ipView.setText(String.format(
-					"Input this URL in VLC player:\nrtsp://%s:%d/%s.sdp",
-					mAddress, mPort, mVideoName));
+//			ipView.setText(String.format(
+//					"Input this URL in VLC player:\nrtsp://%s:%d/%s.sdp",
+//					mAddress, mPort, mVideoName));
 			break;
 		case EasyCameraApp.STATE_CONNECTING:
-			ipView.setText(null);
+//			ipView.setText(null);
 			break;
 		default:
 			break;
@@ -669,7 +690,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	public void onBitrareUpdate(long bitrate) {
 		if (mClient != null) {
 			if (bitrate / 1000 < 250)
-//				ipView.setText("	" + bitrate / 1000 + " kbps");
 				ipView.setText(" The current network is not stable !  " + bitrate / 1000 +" kbps");
 			if (bitrate / 1000 < 150)
 				// stop streaming 
@@ -685,11 +705,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 				@Override
 				public void run() {
-
 					btnSelectContact.setBackgroundResource(R.drawable.pause);
 					alive = true;
 					stopStream();
-					ipView.setText("Disconnect with server，stop transfer");
+//					ipView.setText("Disconnect with server，stop transfer");
 
 				}
 			});
@@ -717,9 +736,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	}
 
 	@Override
-	public void surfaceCreated(final SurfaceHolder holder) {// Configures the
-		// SessionBuilder
-
+	public void surfaceCreated(final SurfaceHolder holder) {
+		// Configures the SessionBuilder
 		mReceiver = new BroadcastReceiver() {
 
 			@Override
@@ -729,27 +747,24 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					byte state = intent.getByteExtra(EasyCameraApp.KEY_STATE,
 							EasyCameraApp.STATE_DISCONNECTED);
 					// setStateDescription(state);
-
 					if (state == EasyCameraApp.STATE_CONNECTED) {
-						ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
-								mAddress, Integer.parseInt(mPort), mVideoName));
+//						ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
+//								mAddress, Integer.parseInt(mPort), mVideoName));
 					}
 
 				} else {
-					if ("REDIRECT".equals(intent.getAction())) {
+					if (intent.getAction().equals("REDIRECT")) {
 						String location = intent.getStringExtra("location");
 						if (!TextUtils.isEmpty(location)) {
 							// ======================
 						}
-					} else if ("PAUSE".equals(intent.getAction())) {
+					} else if (intent.getAction().equals("PAUSE")) {
 						// ==========================
 					} else if (ConnectivityManager.CONNECTIVITY_ACTION
 							.equals(intent.getAction())) {
 						boolean success = false;
 						// get the network connection
 						ConnectivityManager connManager = (ConnectivityManager) faActivity.getSystemService(faActivity.CONNECTIVITY_SERVICE);
-						// State state =
-						// connManager.getActiveNetworkInfo().getState();
 						State state = connManager.getNetworkInfo(
 								ConnectivityManager.TYPE_WIFI).getState();
 						if (State.CONNECTED == state) {
@@ -763,9 +778,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						if (success) {
 							// startService(new Intent(MainActivity.this,
 							// CommandService.class));
-							ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
-									mAddress, Integer.parseInt(mPort),
-									mVideoName));
+//							ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
+//									mAddress, Integer.parseInt(mPort),
+//									mVideoName));
 						}
 					}
 				}
@@ -798,7 +813,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				// setStateDescription(EasyCameraApp.sState);
 			}
 		} else {
-			ipView.setText("Network is unavailable,please open the network and try again");
+//			ipView.setText("Network is unavailable,please open the network and try again");
 		}
 
 	}
@@ -817,7 +832,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		// Private Data Storage
 		pm.addIQProvider("query", "jabber:iq:private",
 				new PrivateDataManager.PrivateDataIQProvider());
-
 		// Time
 		try {
 			pm.addIQProvider("query", "jabber:iq:time",
@@ -830,67 +844,51 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		// Roster Exchange
 		pm.addExtensionProvider("x", "jabber:x:roster",
 				new RosterExchangeProvider());
-
 		// Message Events
 		pm.addExtensionProvider("x", "jabber:x:event",
 				new MessageEventProvider());
-
 		// Chat State
 		pm.addExtensionProvider("active",
 				"http://jabber.org/protocol/chatstates",
 				new ChatStateExtension.Provider());
-
 		pm.addExtensionProvider("composing",
 				"http://jabber.org/protocol/chatstates",
 				new ChatStateExtension.Provider());
-
 		pm.addExtensionProvider("paused",
 				"http://jabber.org/protocol/chatstates",
 				new ChatStateExtension.Provider());
-
 		pm.addExtensionProvider("inactive",
 				"http://jabber.org/protocol/chatstates",
 				new ChatStateExtension.Provider());
-
 		pm.addExtensionProvider("gone",
 				"http://jabber.org/protocol/chatstates",
 				new ChatStateExtension.Provider());
-
 		// XHTML
 		pm.addExtensionProvider("html", "http://jabber.org/protocol/xhtml-im",
 				new XHTMLExtensionProvider());
-
 		// Group Chat Invitations
 		pm.addExtensionProvider("x", "jabber:x:conference",
 				new GroupChatInvitation.Provider());
-
 		// Service Discovery # Items
 		pm.addIQProvider("query", "http://jabber.org/protocol/disco#items",
 				new DiscoverItemsProvider());
-
 		// Service Discovery # Info
 		pm.addIQProvider("query", "http://jabber.org/protocol/disco#info",
 				new DiscoverInfoProvider());
-
 		// Data Forms
 		pm.addExtensionProvider("x", "jabber:x:data", new DataFormProvider());
-
 		// MUC User
 		pm.addExtensionProvider("x", "http://jabber.org/protocol/muc#user",
 				new MUCUserProvider());
-
 		// MUC Admin
 		pm.addIQProvider("query", "http://jabber.org/protocol/muc#admin",
 				new MUCAdminProvider());
-
 		// MUC Owner
 		pm.addIQProvider("query", "http://jabber.org/protocol/muc#owner",
 				new MUCOwnerProvider());
-
 		// Delayed Delivery
 		pm.addExtensionProvider("x", "jabber:x:delay",
 				new DelayInformationProvider());
-
 		// Version
 		try {
 			pm.addIQProvider("query", "jabber:iq:version",
@@ -898,54 +896,35 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		} catch (ClassNotFoundException e) {
 			// Not sure what's happening here.
 		}
-
 		// VCard
 		pm.addIQProvider("vCard", "vcard-temp", new VCardProvider());
-
 		// Offline Message Requests
 		pm.addIQProvider("offline", "http://jabber.org/protocol/offline",
 				new OfflineMessageRequest.Provider());
-
 		// Offline Message Indicator
 		pm.addExtensionProvider("offline",
 				"http://jabber.org/protocol/offline",
 				new OfflineMessageInfo.Provider());
-
 		// Last Activity
 		pm.addIQProvider("query", "jabber:iq:last", new LastActivity.Provider());
-
 		// User Search
 		pm.addIQProvider("query", "jabber:iq:search", new UserSearch.Provider());
-
 		// SharedGroupsInfo
 		pm.addIQProvider("sharedgroup",
 				"http://www.jivesoftware.org/protocol/sharedgroup",
 				new SharedGroupsInfo.Provider());
-
 		// JEP-33: Extended Stanza Addressing
 		pm.addExtensionProvider("addresses",
 				"http://jabber.org/protocol/address",
 				new MultipleAddressesProvider());
-
 		// FileTransfer
 		pm.addIQProvider("si", "http://jabber.org/protocol/si",
 				new StreamInitiationProvider());
 
 		pm.addIQProvider("query", "http://jabber.org/protocol/bytestreams",
 				new BytestreamsProvider());
-
-//		pm.addIQProvider("open", "http://jabber.org/protocol/ibb",
-//				new IBBProviders.Open());
-//
-//		pm.addIQProvider("close", "http://jabber.org/protocol/ibb",
-//				new IBBProviders.Close());
-//
-//		pm.addExtensionProvider("data", "http://jabber.org/protocol/ibb",
-//				new IBBProviders.Data());
-
 		// Privacy
 		pm.addIQProvider("query", "jabber:iq:privacy", new PrivacyProvider());
-
 		pm.addIQProvider("command", "http://jabber.org/protocol/commands",
 				new AdHocCommandDataProvider());
 		pm.addExtensionProvider("malformed-action",
@@ -1001,47 +980,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		super.onConfigurationChanged(newConfig);
 		if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
 			// nothing to do
-			
 		} else {
 			// nothing to do
 		}
 	}
-
-	
-	private List<Map<String, String>> getAllFriendsUser(XMPPConnection connection){
-		if(!connection.isConnected()){
-			Log.i("SECOND_GETUSERS","connection=null");
-			try {
-				connection.connect();
-			} catch (XMPPException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		friendList = new ArrayList<Map<String, String>>();
-		Roster roster11 = connection.getRoster();
-		Collection<RosterEntry> entries11 = roster11.getEntries();
-		
-		for (RosterEntry entry : entries11) {
-			Presence presence = roster11.getPresence(entry.getUser()); 
-			Map<String, String> map = new HashMap<String, String>();
-			if(presence.isAvailable()){
-				map.put("status", "online");
-				Log.i("VideoStreaming",entry.getUser() + "--online");
-	        }else{
-	        	map.put("status", "offline");
-	        	Log.i("VideoStreaming",entry.getUser() + "--offline");
-	        }
-
-			map.put("name", entry.getName());
-			map.put("username", entry.getUser());
-//			Log.i("status",presence.getStatus());
-			
-			friendList.add(map);
-		}
-		
-		return friendList;
-	}
-
 }
 
