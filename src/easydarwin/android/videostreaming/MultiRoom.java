@@ -24,11 +24,9 @@ import android.widget.Toast;
 public class MultiRoom {
 	
 	private Activity context;
-	private String room1 = null;
+
 	private String rooom;
 	
-	
-	private String streaminglinkTag = "rtsp://129.128.184.46:8554/";
 	private Handler mHandler = new Handler();
 	
 	public MultiRoom(Activity context){
@@ -120,61 +118,7 @@ public class MultiRoom {
 		}else
 			return false;
 	}
-	
-	/**Invitation Listener */
-	public void InvitationListener(XMPPConnection connection){
-		
-		//check for after videoPlaying back to streamingFragment
-		if(!connection.isConnected()){
-			Log.i("InvitationListener-SECOND-CREATEROOM_BUG","connection == null!");
-			try {
-				connection.connect();
-			} catch (XMPPException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		MultiUserChat.addInvitationListener(connection, new InvitationListener(){		
-			@Override
-			public void invitationReceived(Connection conn, String Aroom,  
-                   String inviter, String reason, String password, Message message) {
-				room1 = Aroom.split("@")[0];
-				setChatRoom(room1); // userB.Room = userA.Room if userA.Room!=null
-				//accepted by default//must be room name without "@conference.myria"
-				MultiUserChat multiUserChat = new MultiUserChat(conn, Aroom);    
-                try {  
-                    multiUserChat.join(conn.getUser()); 
-                    Log.i("INVITATION","invite to join success!");  
-                } catch (XMPPException e) {  
-                    e.printStackTrace();  
-                }  
-                final String inviterr = inviter;
-               // streaming link listener
-                multiUserChat.addMessageListener(new PacketListener() {  
-                    @Override  
-                    public void processPacket(Packet packet) {
-    					Message message = (Message) packet;
-    					if (message.getBody() != null) {
-    						Log.i("INVITATION-MULTI-ROOM RECEIVE MESSAGE:", "Text Recieved "
-    								+ message.getBody() + " from " + message.getFrom());
-    						final String msg = message.getBody().toString();
-    						mHandler.post(new Runnable() {
-    							@SuppressLint("NewApi")
-    							public void run() {
-    								// notification or chat...
-    								if (msg.contains(streaminglinkTag))	
-    									VideoStreamingFragment.popupReceiveStreamingLinkMessage(inviterr, msg);
-    								else
-    									Toast.makeText(context,/*"Invitation ELSE (not streaming link because didn't play streaming): " +*/ msg,
-    											Toast.LENGTH_SHORT).show();
-    							}
-    						});
-    					}
-    				}  
-                }); 
-			}			
-		});
-	}
+
 	
 	/** ROOM message Listener*/
 	public void RoomMsgListenerConnection(XMPPConnection connection, String roomName) {
@@ -247,7 +191,7 @@ public class MultiRoom {
 						Toast.LENGTH_SHORT).show();
 			} 
 		}else{
-			room = getChatRoom();
+//			room = getChatRoom();
 			Log.i("MULTIROOM-SENDMESSAGE:", "room Name"+room);
 			Toast.makeText(context, "Room is null",
 					Toast.LENGTH_SHORT).show();
@@ -315,6 +259,7 @@ public class MultiRoom {
 	    try {
 			muc.destroy("destroy reason", room + "@conference.myria");
 			Log.i("LEAVE_ROOM",connection.getUser()+" Destroy the room");
+//			room = null;
 		} catch (XMPPException e) {
 			e.printStackTrace();
 		}

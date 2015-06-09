@@ -60,7 +60,7 @@ public class PaintView extends View implements OnTouchListener {
 			mX = event.getX();
 			mY = event.getY();
 
-			SendMessage(VideoStreamingFragment.connection, mRoom.getChatRoom());
+//			SendMessage(VideoStreamingFragment.connection, mRoom.getChatRoom());
 			//ReceiveMsgListenerConnection(VideoStreamingFragment.connection);
 			break;
 		}

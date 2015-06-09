@@ -43,6 +43,8 @@ import org.videolan.vlc.util.VLCInstance;
 import org.videolan.vlc.util.WeakHandler;
 import org.videolan.vlc.widget.SlidingPaneLayout;
 
+import easydarwin.android.videostreaming.SettingsActivity;
+import easydarwin.android.videostreaming.VideoStreamingFragment;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -95,7 +97,7 @@ public class VLCMainActivity extends ActionBarActivity {
 
     private static final int ACTIVITY_RESULT_PREFERENCES = 1;
     private static final int ACTIVITY_SHOW_INFOLAYOUT = 2;
-
+	
     private ActionBar mActionBar;
     private SidebarAdapter mSidebarAdapter;
     private AudioPlayer mAudioPlayer;
@@ -560,6 +562,7 @@ public class VLCMainActivity extends ActionBarActivity {
 
     @Override
     public boolean onPrepareOptionsMenu (Menu menu) {
+    	
 //        Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_placeholder);
 //        // Disable the sort option if we can't use it on the current fragment.
 //        if (current == null || !(current instanceof ISortable)) {
@@ -645,21 +648,21 @@ public class VLCMainActivity extends ActionBarActivity {
 //            case R.id.ml_menu_search:
 //                onSearchRequested();
 //                break;
-            case android.R.id.home:
-                // Slide down the audio player.
-                if (slideDownAudioPlayer())
-                    break;
-
-                // If it's the albums songs view, a "backpressed" action shows .
-                if (secondaryFragments.contains(mCurrentFragment)) {
-                    popSecondaryFragment();
-                    break;
-                }
-                /* Toggle the sidebar */
-                if (mDrawerToggle.onOptionsItemSelected(item)) {
-                    return true;
-                }
-                break;
+//            case android.R.id.home:
+//                // Slide down the audio player.
+//                if (slideDownAudioPlayer())
+//                    break;
+//
+//                // If it's the albums songs view, a "backpressed" action shows .
+//                if (secondaryFragments.contains(mCurrentFragment)) {
+//                    popSecondaryFragment();
+//                    break;
+//                }
+//                /* Toggle the sidebar */
+//                if (mDrawerToggle.onOptionsItemSelected(item)) {
+//                    return true;
+//                }
+//                break;
 //            case R.id.search_clear_history:
 //                MediaDatabase.getInstance().clearSearchHistory();
 //                break;
