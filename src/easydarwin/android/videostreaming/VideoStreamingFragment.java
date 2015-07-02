@@ -91,15 +91,14 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.TextView.OnEditorActionListener;
+import android.widget.Toast;
 
 @SuppressLint("ClickableViewAccessibility")
 public class VideoStreamingFragment extends Fragment implements Callback,
@@ -141,7 +140,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	//private String entries;
 	private List<Map<String, String>> friendList;
 	
-	private XMPPConnection connection;
+	public static XMPPConnection connection;
 	private String streaminglink="";
 	private String streaminglinkTag = "rtsp://129.128.184.46:8554/";
 	private String curDateTime;
@@ -157,7 +156,17 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+		//get XMPPConnection if login success
+		connection = LoginActivity.connection;
+		//check for after videoPlaying back to streamingFragment
+		if(!connection.isConnected()){
+			Log.i("0-SECOND-CREATEROOM_BUG","connection == null!");
+			try {
+				connection.connect();
+			} catch (XMPPException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	@Override
@@ -251,17 +260,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		textMessage = (EditText) v.findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button) v.findViewById(R.id.btn_send_message);
 
-		//get XMPPConnection if login success
-		connection = LoginActivity.connection;
-		//check for after videoPlaying back to streamingFragment
-		if(!connection.isConnected()){
-			Log.i("0-SECOND-CREATEROOM_BUG","connection == null!");
-			try {
-				connection.connect();
-			} catch (XMPPException e) {
-				e.printStackTrace();
-			}
-		}
+
 	}
 
 	@Override
@@ -356,13 +355,13 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 							"p_video_encoder", String.valueOf(videoEncoder)));
 
 					Matcher matcher = pattern.matcher(preferences.getString(
-							"video_resolution", "640x480"));
+							"video_resolution", "320x240"));
 					matcher.find();
 
 					videoQuality = new VideoQuality(Integer.parseInt(matcher
 							.group(1)), Integer.parseInt(matcher.group(2)),
 							Integer.parseInt(preferences.getString(
-									"video_framerate", "24")),
+									"video_framerate", "15")),
 							Integer.parseInt(preferences.getString(
 									"video_bitrate", "300")) * 1000);
 					mSession = SessionBuilder.getInstance()
@@ -455,12 +454,16 @@ public class VideoStreamingFragment extends Fragment implements Callback,
     											Toast.LENGTH_SHORT).show();
     							}
     						});
+    						
     					}
     				}  
+
                 }); 
 			}			
 		});
 	}
+	
+	
 	
 	private void stopStream() {
 		if (mClient != null) {
@@ -492,6 +495,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					e.printStackTrace();
 				}
 			} while (alive);
+			if(!alive){
+				android.os.Message msg = new android.os.Message();
+				msg.what = 2;
+				mHandler.sendMessage(msg);
+			}
 		}
 
 		@SuppressLint({ "HandlerLeak", "SimpleDateFormat" })
@@ -506,7 +514,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 							"yyyy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime());
 					mTime.setText(curDateTime);
 					break;
-
+				case 2:
+					mTime.setText("");
+					break;
 				default:
 					break;
 				}

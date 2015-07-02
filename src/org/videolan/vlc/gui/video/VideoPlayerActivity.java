@@ -128,6 +128,7 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import easydarwin.android.videostreaming.MultiRoom;
+import easydarwin.android.videostreaming.PaintView;
 import easydarwin.android.videostreaming.VideoStreamingFragment;
 
 @SuppressLint("ClickableViewAccessibility")
@@ -398,10 +399,13 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
          * get XMPPConnection [need to reconnect to the server]
          * and add a PaintView for touch screen*/ 
         // import: use sender[A]'s mRoom to keep room info same with player[B]
+        Presence presence = new Presence(Presence.Type.available);
+		connection.sendPacket(presence);
+		
         mRoom = VideoStreamingFragment.mRoom;
         // new thread to keep connection
 		new GetXMPPConnection().execute();
-		
+
 		textMessage = (EditText) findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button)findViewById(R.id.btn_send_message);
 		// EditText: set android keyboard enter button as send button
@@ -422,10 +426,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		});
 
 		/** draw a circle when users touch the screen */
-//    	paintView = (PaintView) findViewById(R.id.drawView);		
-//    	paintView.setVisibility(View.VISIBLE);
+    	paintView = (PaintView) findViewById(R.id.drawView);		
+    	paintView.setVisibility(View.VISIBLE);
 //    	paintView.setFocusable(true);
-//    	paintView.setOnTouchListener(paintView);
+    	paintView.setOnTouchListener(paintView);
     	
     	
         mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
@@ -491,6 +495,32 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         updateNavStatus();
     }
 
+    private class TouchScreenThread extends Thread{
+    	@Override
+		public void run() {
+	
+        	paintView.setVisibility(View.VISIBLE);
+        	paintView.setFocusable(true);
+        	paintView.setOnTouchListener(paintView);
+    	}
+    	
+    	private Handler mHandler = new Handler() {
+			
+			@Override
+			public void handleMessage(android.os.Message msg) {
+				super.handleMessage(msg);
+				switch (msg.what) {
+				case 1:
+					
+					break;
+
+				default:
+					break;
+				}
+			}
+		};
+    }
+    
     /**Get XMPP Connection */
 	@SuppressWarnings("rawtypes")
 	private class GetXMPPConnection extends AsyncTask {
@@ -519,7 +549,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
 					Log.i("VIDEOPLAYERACTIVITY-ROOMNAME",invitedRoom+" success!");
 					// draw circle on screen according the coordination
-					PAINTViewRoomMsgListener(connection, invitedRoom);
+//					PAINTViewRoomMsgListener(connection, invitedRoom);
 					
 					try {
 						if(mRoom.joinChatRoom(connection,invitedRoom))
@@ -564,8 +594,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					public void run() {
 						// notification or chat...	
 						if(msg.equals("PaintView")){
-//							String[] coordination = msg.split(",");
-//							Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
+							String[] coordination = msg.split(",");
+							Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
 							
 						} 
 					}

@@ -53,7 +53,7 @@
             android:key="p_video_encoder"
             android:title="@string/settings9" />
         <ListPreference
-            android:defaultValue="640x480"
+            android:defaultValue="320x240"
             android:entries="@array/videoResolutionArray"
             android:entryValues="@array/videoResolutionArray"
             android:key="video_resolution"
@@ -62,7 +62,7 @@
         <!-- video_resolution/video_framerate/ -->
 
         <ListPreference
-            android:defaultValue="24"
+            android:defaultValue="15"
             android:entries="@array/videoFramerateArray"
             android:entryValues="@array/videoFramerateValues"
             android:key="video_framerate"

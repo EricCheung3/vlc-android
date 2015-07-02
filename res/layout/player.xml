@@ -46,7 +46,7 @@
             android:layout_alignParentLeft="true"
             android:layout_below="@+id/player_surface_frame" />
         -->
-    </FrameLayout>
+	 </FrameLayout>
 
         <RelativeLayout
             android:id="@+id/linear2"

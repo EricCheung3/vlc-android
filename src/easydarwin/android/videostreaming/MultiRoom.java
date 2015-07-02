@@ -3,7 +3,6 @@ package easydarwin.android.videostreaming;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -11,12 +10,12 @@ import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.Form;
-import org.jivesoftware.smackx.muc.InvitationListener;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -27,7 +26,7 @@ public class MultiRoom {
 
 	private String rooom;
 	
-	private Handler mHandler = new Handler();
+//	private Handler mHandler = new Handler();
 	
 	public MultiRoom(Activity context){
 		this.context = context;
@@ -145,15 +144,52 @@ public class MultiRoom {
                 mHandler.post(new Runnable() {
 					@SuppressLint("NewApi")
 					public void run() {
-						// notification or chat...	
-						if(msg.equals("PaintView")){
+						
+						/** update UI [ne thread]
+						 *  use handler to process it: display message
+						 */
+						String[] coordination = msg.split(",");
+						if (msg.equals("PaintView"))	{
+							android.os.Message handlerMsg = new android.os.Message();
+							handlerMsg.what = 2;
+							handlerMsg.obj = fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")";
+							mHandler.sendMessage(handlerMsg);
+						}else{
+							android.os.Message handlerMsg = new android.os.Message();
+							handlerMsg.what = 3;
+							handlerMsg.obj = fromName[1]+ ": " + msg;
+							mHandler.sendMessage(handlerMsg);
+						}
+						
+//						// notification or chat...	
+//						if(msg.equals("PaintView")){
 //							String[] coordination = msg.split(",");
 //							Toast.makeText(context,fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
-						}else
-							Toast.makeText(context,fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show();
+//						}else
+//							Toast.makeText(context,fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show();
 					}
 				}); 
             }  
+            
+            @SuppressLint("HandlerLeak")
+			private Handler mHandler = new Handler(Looper.getMainLooper()) {
+        		
+        		@Override
+        		public void handleMessage(android.os.Message handlerMsg) {
+        			super.handleMessage(handlerMsg);
+        			switch (handlerMsg.what) {
+        			case 2:
+        				Log.i("handlerMsg", handlerMsg.obj.toString() );
+        				Toast.makeText(context, handlerMsg.obj.toString(), Toast.LENGTH_SHORT).show();
+        				break;
+        			case 3:
+        				Toast.makeText(context, handlerMsg.obj.toString(), Toast.LENGTH_SHORT).show();
+        				break;
+        			default:
+        				break;
+        			}
+        		}
+        	};
         });  
 	}
 	
