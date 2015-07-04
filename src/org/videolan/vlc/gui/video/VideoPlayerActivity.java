@@ -128,7 +128,8 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import easydarwin.android.videostreaming.MultiRoom;
-import easydarwin.android.videostreaming.PaintView;
+import easydarwin.android.videostreaming.PaintSurfaceView;
+import easydarwin.android.videostreaming.PaintSurfaceView2;
 import easydarwin.android.videostreaming.VideoStreamingFragment;
 
 @SuppressLint("ClickableViewAccessibility")
@@ -268,7 +269,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private Button btnSendMessage;
     
     /** draw a circle when touch the screen */
-//	private PaintView paintView;
+	private PaintSurfaceView2 paintView;
 	/** room chat*/
 	private MultiRoom mRoom;
 	private String invitedRoom;
@@ -399,8 +400,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
          * get XMPPConnection [need to reconnect to the server]
          * and add a PaintView for touch screen*/ 
         // import: use sender[A]'s mRoom to keep room info same with player[B]
-        Presence presence = new Presence(Presence.Type.available);
-		connection.sendPacket(presence);
+//        Presence presence = new Presence(Presence.Type.available);
+//		connection.sendPacket(presence);
 		
         mRoom = VideoStreamingFragment.mRoom;
         // new thread to keep connection
@@ -426,12 +427,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		});
 
 		/** draw a circle when users touch the screen */
-    	paintView = (PaintView) findViewById(R.id.drawView);		
-    	paintView.setVisibility(View.VISIBLE);
-//    	paintView.setFocusable(true);
-    	paintView.setOnTouchListener(paintView);
+    	paintView = (PaintSurfaceView2) findViewById(R.id.drawView);		
+//    	paintView.setVisibility(View.VISIBLE);
+//   	paintView.setFocusable(true);
+//    	paintView.setOnTouchListener(paintView);
+//    	paintView.setOnTouchListener(paintView);
     	
-    	
+    	new Thread(new TouchScreenThread()).start();
+		
         mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
         mSeekbar.setOnSeekBarChangeListener(mSeekListener);
 
@@ -498,10 +501,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private class TouchScreenThread extends Thread{
     	@Override
 		public void run() {
-	
+
         	paintView.setVisibility(View.VISIBLE);
         	paintView.setFocusable(true);
         	paintView.setOnTouchListener(paintView);
+        	
+    		Message msg = new Message();
+			msg.what = 1;
+			mHandler.sendMessage(msg);
     	}
     	
     	private Handler mHandler = new Handler() {
@@ -511,7 +518,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 				super.handleMessage(msg);
 				switch (msg.what) {
 				case 1:
-					
+
 					break;
 
 				default:
@@ -704,6 +711,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         editor.commit();
         AudioServiceController.getInstance().unbindAudioService(this);
+
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -759,6 +767,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             // Listen for changes to media routes.
             mediaRouterAddCallback(true);
         }
+
     }
 
     /**
@@ -1380,7 +1389,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     /**
      * show/hide the overlay
      */
-
+    //////HERE IS THE TOUCH EVENT///////////////////////////////
+    /***********************************88************/
+    
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (mIsLocked) {

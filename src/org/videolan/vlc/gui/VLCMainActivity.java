@@ -43,8 +43,7 @@ import org.videolan.vlc.util.VLCInstance;
 import org.videolan.vlc.util.WeakHandler;
 import org.videolan.vlc.widget.SlidingPaneLayout;
 
-import easydarwin.android.videostreaming.SettingsActivity;
-import easydarwin.android.videostreaming.VideoStreamingFragment;
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -56,6 +55,7 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -205,7 +205,7 @@ public class VLCMainActivity extends ActionBarActivity {
         mRootContainer = (DrawerLayout) v_main.findViewById(R.id.root_container);
 
         /* Set up the action bar */
-//        prepareActionBar();
+        prepareActionBar();
 
         /* Set up the sidebar click listener
          * no need to invalidate menu for now */
@@ -216,8 +216,8 @@ public class VLCMainActivity extends ActionBarActivity {
         mRootContainer.setDrawerListener(mDrawerToggle);
         // set a custom shadow that overlays the main content when the drawer opens
         mRootContainer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
-//        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-//        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
 
         mListView.setOnItemClickListener(new OnItemClickListener() {
 
@@ -309,7 +309,7 @@ public class VLCMainActivity extends ActionBarActivity {
         mDrawerToggle.syncState();
     }
 
-//    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void prepareActionBar() {
         mActionBar = getSupportActionBar();
         mActionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);

@@ -23,9 +23,10 @@
             <SurfaceView
                 android:id="@+id/player_surface"
                 android:layout_width="1dp"
-                android:layout_height="400dp" />
+                android:layout_height="400dp"
+                android:clickable="true" />
        	<!-- PaintView draw a circle when touch screen -->
-            <easydarwin.android.videostreaming.PaintView
+            <easydarwin.android.videostreaming.PaintSurfaceView2
             	android:id="@+id/drawView"
           	  	android:layout_width="match_parent"
             	android:layout_height="400dp" />
