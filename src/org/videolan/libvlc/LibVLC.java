@@ -92,6 +92,10 @@ public class LibVLC {
     public native void attachSubtitlesSurface(Surface surface);
     public native void detachSubtitlesSurface();
 
+    public native void attachPaintSurface(Surface surface);
+    public native void detachPaintSurface();
+    
+    
     public native void eventVideoPlayerActivityCreated(boolean created);
 
     /* Load library before object instantiation */

@@ -391,17 +391,29 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         mSubtitlesSurfaceHolder = mSubtitlesSurface.getHolder();
         mSubtitlesSurfaceHolder.setFormat(PixelFormat.RGBA_8888);
         mSubtitlesSurface.setZOrderMediaOverlay(true);
+
         if (mPresentation == null) {
             mSurfaceHolder.addCallback(mSurfaceCallback);
             mSubtitlesSurfaceHolder.addCallback(mSubtitlesSurfaceCallback);
+                       
         }
+        
+    	paintView = (SurfaceView) findViewById(R.id.drawView);	
+    	paintViewHolder = paintView.getHolder();
+    	paintView.setZOrderOnTop(true);
+    	paintViewHolder.setFormat(PixelFormat.TRANSPARENT);
 
+    	if (mPresentation == null) {
+    		paintViewHolder.addCallback(paintViewCallback);
+                       
+        }
+    	
+        
         /** TODO:
          * get XMPPConnection [need to reconnect to the server]
          * and add a PaintView for touch screen*/ 
         // import: use sender[A]'s mRoom to keep room info same with player[B]
-//        Presence presence = new Presence(Presence.Type.available);
-//		connection.sendPacket(presence);
+
 		
         mRoom = VideoStreamingFragment.mRoom;
         // new thread to keep connection
@@ -427,26 +439,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		});
 
 		/** draw a circle when users touch the screen */
-		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mPaint.setColor(Color.RED);
-		mPaint.setStyle(Style.STROKE);
 
-		
-    	paintView = (SurfaceView) findViewById(R.id.drawView);	
-    	paintViewHolder = paintView.getHolder();
-//    	paintView.setZOrderOnTop(true);
-//    	paintViewHolder.setFormat(PixelFormat.RGBA_8888);
-        if (mPresentation == null) {
-        	paintViewHolder.addCallback(paintViewCallback);           
-        }
-//        
 
-//    	paintView.setVisibility(View.VISIBLE);
-//   	paintView.setFocusable(true);
-//    	paintView.setOnTouchListener(paintView);
-//    	paintView.setOnTouchListener(paintView);
-    	
-//    	new Thread(new TouchScreenThread()).start();
+	
+
 		
 //        mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
 //        mSeekbar.setOnSeekBarChangeListener(mSeekListener);
@@ -1485,11 +1481,13 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     		      try {
     		        c = paintViewHolder.lockCanvas(null);
     		        synchronized (paintViewHolder) {
-    		        	c.restore();
+//    		        	c.restore();
     		        	c.drawColor(Color.TRANSPARENT);
     	    	    	c.drawCircle(bubbleX, bubbleY, 50, mPaint);
     		        }
-    		      } finally {
+    		      } catch (IllegalArgumentException e) {
+                      e.printStackTrace();
+    		      }finally {
     		        if (c != null) {
     		        	paintViewHolder.unlockCanvasAndPost(c);
     		        }
@@ -1881,11 +1879,15 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         	if(mLibVLC != null)
-                mLibVLC.attachSurface(holder.getSurface(),VideoPlayerActivity.this);
+                mLibVLC.attachSubtitlesSurface(holder.getSurface());
         }
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
+    		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mPaint.setColor(Color.RED);
+    		mPaint.setStyle(Style.STROKE);
+    		
         	thread = new BubbleThread(holder);
         	thread.setRunning(true);
             thread.start();
@@ -1894,7 +1896,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
         	if(mLibVLC != null)
-                mLibVLC.detachSurface();
+                mLibVLC.detachSubtitlesSurface();
         	 boolean retry = true;
         	 thread.setRunning(false);
              while (retry) {
