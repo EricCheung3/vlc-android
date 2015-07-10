@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -22,6 +23,8 @@ public class PaintSurfaceView2 extends SurfaceView implements
 
 	
 	private Context ctx;
+	private Handler handler;
+	
 	private float mX = -100;
 	private float mY = -100;
 	private Paint mPaint = new Paint();
@@ -36,7 +39,7 @@ public class PaintSurfaceView2 extends SurfaceView implements
 
 		mHolder.addCallback(this);
 		// Setting the color for the paint object
-		mPaint.setColor(Color.BLUE);
+		mPaint.setColor(Color.RED);
 		mPaint.setStyle(Style.STROKE);
 
 		ctx = context;
@@ -52,6 +55,7 @@ public class PaintSurfaceView2 extends SurfaceView implements
 		switch (e.getAction()) {
 		case MotionEvent.ACTION_DOWN:
 			mThread.setBubble(touchX, touchY);
+			Log.i("TOUCH++COORDINATE==PaintView", Float.toString(touchX)+","+Float.toString(touchY));
 			break;
 		// case MotionEvent.ACTION_MOVE:
 		// mThread.setBubble(touchX, touchY);
@@ -64,21 +68,14 @@ public class PaintSurfaceView2 extends SurfaceView implements
 	}
 
 	class BubbleThread extends Thread {
-		private float canvasWidth = 200;
-		private float canvasHeight = 400;
-		
 		
 		private boolean run = false;
 
 		private float bubbleX;
 		private float bubbleY;
 
-		private Handler handler;
-
-		public BubbleThread(SurfaceHolder surfaceHolder, Context context,
-				Handler handler) {
+		public BubbleThread(SurfaceHolder surfaceHolder, Context context) {
 			mHolder = surfaceHolder;
-			handler = handler;
 			ctx = context;
 		}
 
@@ -86,16 +83,6 @@ public class PaintSurfaceView2 extends SurfaceView implements
 			bubbleX = x;
 			bubbleY = y;
 		}
-
-//		public void doStart() {
-//			synchronized (mHolder) {
-//				// Start bubble in centre and create some random motion
-//				bubbleX = canvasWidth / 2;
-//				bubbleY = canvasHeight / 2;
-//				headingX = (float) (-1 + (Math.random() * 2));
-//				headingY = (float) (-1 + (Math.random() * 2));
-//			}
-//		}
 
 		public void run() {
 			while (run) {
@@ -117,13 +104,6 @@ public class PaintSurfaceView2 extends SurfaceView implements
 			run = b;
 		}
 
-		public void setSurfaceSize(int width, int height) {
-			synchronized (mHolder) {
-				canvasWidth = width;
-				canvasHeight = height;
-//				doStart();
-			}
-		}
 
 		private void doDraw(Canvas canvas) {
 			if (run) {
@@ -139,9 +119,9 @@ public class PaintSurfaceView2 extends SurfaceView implements
 	}
 
 	@Override
-	public void surfaceCreated(SurfaceHolder arg0) {
+	public void surfaceCreated(SurfaceHolder holder) {
 
-		mThread = new BubbleThread(mHolder, ctx, new Handler());
+		mThread = new BubbleThread(holder, ctx);
 		mThread.setRunning(true);
 		mThread.start();
 
@@ -158,7 +138,7 @@ public class PaintSurfaceView2 extends SurfaceView implements
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
-		mThread.setSurfaceSize(width, height);
+
 	}
 
 	@Override

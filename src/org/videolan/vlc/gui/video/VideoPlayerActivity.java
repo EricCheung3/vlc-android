@@ -34,7 +34,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
@@ -62,7 +61,6 @@ import org.videolan.vlc.gui.CommonDialogs.MenuType;
 import org.videolan.vlc.gui.PreferencesActivity;
 import org.videolan.vlc.gui.VLCMainActivity;
 import org.videolan.vlc.util.AndroidDevices;
-import org.videolan.vlc.util.Strings;
 import org.videolan.vlc.util.VLCInstance;
 import org.videolan.vlc.util.WeakHandler;
 
@@ -82,8 +80,11 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Paint;
+import android.graphics.Paint.Style;
 import android.graphics.PixelFormat;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
@@ -97,8 +98,6 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings.SettingNotFoundException;
-import android.text.format.DateFormat;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.KeyEvent;
@@ -114,21 +113,15 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
-import android.view.animation.AnimationUtils;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.RotateAnimation;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import easydarwin.android.videostreaming.MultiRoom;
-import easydarwin.android.videostreaming.PaintSurfaceView;
 import easydarwin.android.videostreaming.PaintSurfaceView2;
 import easydarwin.android.videostreaming.VideoStreamingFragment;
 
@@ -164,10 +157,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private SharedPreferences mSettings;
 
     /** Overlay */
-    private View mOverlayHeader;
-    private View mOverlayOption;
-    private View mOverlayProgress;
-    private View mOverlayBackground;
+//    private View mOverlayHeader;
+//    private View mOverlayOption;
+//    private View mOverlayProgress;
+//    private View mOverlayBackground;
     private static final int OVERLAY_TIMEOUT = 4000;
     private static final int OVERLAY_INFINITE = 3600000;
     private static final int FADE_OUT = 1;
@@ -179,29 +172,29 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private boolean mDragging;
     private boolean mShowing;
     private int mUiVisibility = -1;
-    private SeekBar mSeekbar;
-    private TextView mTitle;
-    private TextView mSysTime;
-    private TextView mBattery;
-    private TextView mTime;
-    private TextView mLength;
-    private TextView mInfo;
-    private ImageView mLoading;
-    private TextView mLoadingText;
-    private ImageButton mPlayPause;
-    private ImageButton mBackward;
-    private ImageButton mForward;
+//    private SeekBar mSeekbar;
+//    private TextView mTitle;
+//    private TextView mSysTime;
+//    private TextView mBattery;
+//    private TextView mTime;
+//    private TextView mLength;
+//    private TextView mInfo;
+//    private ImageView mLoading;
+//    private TextView mLoadingText;
+//    private ImageButton mPlayPause;
+//    private ImageButton mBackward;
+//    private ImageButton mForward;
     private boolean mEnableJumpButtons;
     private boolean mEnableBrightnessGesture;
     private boolean mEnableCloneMode;
     private boolean mDisplayRemainingTime = false;
     private int mScreenOrientation;
-    private ImageButton mAudioTrack;
-    private ImageButton mSubtitle;
-    private ImageButton mLock;
-    private ImageButton mSize;
-    private ImageButton mMenu;
-    private boolean mIsLocked = false;
+//    private ImageButton mAudioTrack;
+//    private ImageButton mSubtitle;
+//    private ImageButton mLock;
+//    private ImageButton mSize;
+//    private ImageButton mMenu;
+//    private boolean mIsLocked = false;
     private int mLastAudioTrack = -1;
     private int mLastSpuTrack = -2;
 
@@ -233,7 +226,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private static final int TOUCH_VOLUME = 1;
     private static final int TOUCH_BRIGHTNESS = 2;
     private static final int TOUCH_SEEK = 3;
-    private int mTouchAction;
+//    private int mTouchAction;
     private int mSurfaceYDisplayRange;
     private float mTouchY, mTouchX, mVol;
 
@@ -255,11 +248,11 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private int mPreviousHardwareAccelerationMode;
 
     // Tips
-    private View mOverlayTips;
+//    private View mOverlayTips;
     private static final String PREF_TIPS_SHOWN = "video_player_tips_shown";
 
     // Navigation handling (DVD, Blu-Ray...)
-    private ImageButton mNavMenu;
+//    private ImageButton mNavMenu;
     private boolean mHasMenu = false;
     private boolean mIsNavMenu = false;
     
@@ -269,7 +262,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     private Button btnSendMessage;
     
     /** draw a circle when touch the screen */
-	private PaintSurfaceView2 paintView;
+    //[ rewrite the SurfaceView like surface]
+	private SurfaceView paintView;
+	private SurfaceHolder paintViewHolder;
+    
+	private Paint mPaint;
+	
+	private BubbleThread thread;
+	
 	/** room chat*/
 	private MultiRoom mRoom;
 	private String invitedRoom;
@@ -322,51 +322,51 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             );
 
         /** initialize Views an their Events */
-        mOverlayHeader = findViewById(R.id.player_overlay_header);
-        mOverlayOption = findViewById(R.id.option_overlay);
-        mOverlayProgress = findViewById(R.id.progress_overlay);
-        mOverlayBackground = findViewById(R.id.player_overlay_background);
+//        mOverlayHeader = findViewById(R.id.player_overlay_header);
+//        mOverlayOption = findViewById(R.id.option_overlay);
+//        mOverlayProgress = findViewById(R.id.progress_overlay);
+//        mOverlayBackground = findViewById(R.id.player_overlay_background);
 
         /* header */
-        mTitle = (TextView) findViewById(R.id.player_overlay_title);
-        mSysTime = (TextView) findViewById(R.id.player_overlay_systime);
-        mBattery = (TextView) findViewById(R.id.player_overlay_battery);
+//        mTitle = (TextView) findViewById(R.id.player_overlay_title);
+//        mSysTime = (TextView) findViewById(R.id.player_overlay_systime);
+//        mBattery = (TextView) findViewById(R.id.player_overlay_battery);
 
         // Position and remaining time
-        mTime = (TextView) findViewById(R.id.player_overlay_time);
-        mTime.setOnClickListener(mRemainingTimeListener);
-        mLength = (TextView) findViewById(R.id.player_overlay_length);
-        mLength.setOnClickListener(mRemainingTimeListener);
+//        mTime = (TextView) findViewById(R.id.player_overlay_time);
+//        mTime.setOnClickListener(mRemainingTimeListener);
+//        mLength = (TextView) findViewById(R.id.player_overlay_length);
+//        mLength.setOnClickListener(mRemainingTimeListener);
 
         // the info textView is not on the overlay
-        mInfo = (TextView) findViewById(R.id.player_overlay_info);
+//        mInfo = (TextView) findViewById(R.id.player_overlay_info);
 
         mEnableBrightnessGesture = mSettings.getBoolean("enable_brightness_gesture", true);
         mScreenOrientation = Integer.valueOf(
                 mSettings.getString("screen_orientation_value", "4" /*SCREEN_ORIENTATION_SENSOR*/));
 
         mEnableJumpButtons = mSettings.getBoolean("enable_jump_buttons", false);
-        mPlayPause = (ImageButton) findViewById(R.id.player_overlay_play);
-        mPlayPause.setOnClickListener(mPlayPauseListener);
-        mBackward = (ImageButton) findViewById(R.id.player_overlay_backward);
-        mBackward.setOnClickListener(mBackwardListener);
-        mForward = (ImageButton) findViewById(R.id.player_overlay_forward);
-        mForward.setOnClickListener(mForwardListener);
-
-        mAudioTrack = (ImageButton) findViewById(R.id.player_overlay_audio);
-        mAudioTrack.setVisibility(View.GONE);
-        mSubtitle = (ImageButton) findViewById(R.id.player_overlay_subtitle);
-        mSubtitle.setVisibility(View.GONE);
-        mNavMenu = (ImageButton) findViewById(R.id.player_overlay_navmenu);
-        mNavMenu.setVisibility(View.GONE);
-
-        mLock = (ImageButton) findViewById(R.id.lock_overlay_button);
-        mLock.setOnClickListener(mLockListener);
-
-        mSize = (ImageButton) findViewById(R.id.player_overlay_size);
-        mSize.setOnClickListener(mSizeListener);
-
-        mMenu = (ImageButton) findViewById(R.id.player_overlay_adv_function);
+//        mPlayPause = (ImageButton) findViewById(R.id.player_overlay_play);
+//        mPlayPause.setOnClickListener(mPlayPauseListener);
+//        mBackward = (ImageButton) findViewById(R.id.player_overlay_backward);
+//        mBackward.setOnClickListener(mBackwardListener);
+//        mForward = (ImageButton) findViewById(R.id.player_overlay_forward);
+//        mForward.setOnClickListener(mForwardListener);
+//
+//        mAudioTrack = (ImageButton) findViewById(R.id.player_overlay_audio);
+//        mAudioTrack.setVisibility(View.GONE);
+//        mSubtitle = (ImageButton) findViewById(R.id.player_overlay_subtitle);
+//        mSubtitle.setVisibility(View.GONE);
+//        mNavMenu = (ImageButton) findViewById(R.id.player_overlay_navmenu);
+//        mNavMenu.setVisibility(View.GONE);
+//
+//        mLock = (ImageButton) findViewById(R.id.lock_overlay_button);
+//        mLock.setOnClickListener(mLockListener);
+//
+//        mSize = (ImageButton) findViewById(R.id.player_overlay_size);
+//        mSize.setOnClickListener(mSizeListener);
+//
+//        mMenu = (ImageButton) findViewById(R.id.player_overlay_adv_function);
 
         try {
             mLibVLC = VLCInstance.getLibVlcInstance();
@@ -427,20 +427,33 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		});
 
 		/** draw a circle when users touch the screen */
-    	paintView = (PaintSurfaceView2) findViewById(R.id.drawView);		
+		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mPaint.setColor(Color.RED);
+		mPaint.setStyle(Style.STROKE);
+
+		
+    	paintView = (SurfaceView) findViewById(R.id.drawView);	
+    	paintViewHolder = paintView.getHolder();
+//    	paintView.setZOrderOnTop(true);
+//    	paintViewHolder.setFormat(PixelFormat.RGBA_8888);
+        if (mPresentation == null) {
+        	paintViewHolder.addCallback(paintViewCallback);           
+        }
+//        
+
 //    	paintView.setVisibility(View.VISIBLE);
 //   	paintView.setFocusable(true);
 //    	paintView.setOnTouchListener(paintView);
 //    	paintView.setOnTouchListener(paintView);
     	
-    	new Thread(new TouchScreenThread()).start();
+//    	new Thread(new TouchScreenThread()).start();
 		
-        mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
-        mSeekbar.setOnSeekBarChangeListener(mSeekListener);
-
-        /* Loading view */
-        mLoading = (ImageView) findViewById(R.id.player_overlay_loading);
-        mLoadingText = (TextView) findViewById(R.id.player_overlay_loading_text);
+//        mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
+//        mSeekbar.setOnSeekBarChangeListener(mSeekListener);
+//
+//        /* Loading view */
+//        mLoading = (ImageView) findViewById(R.id.player_overlay_loading);
+//        mLoadingText = (TextView) findViewById(R.id.player_overlay_loading_text);
         startLoadingAnimation();
 
         mSwitchingView = false;
@@ -498,35 +511,6 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         updateNavStatus();
     }
 
-    private class TouchScreenThread extends Thread{
-    	@Override
-		public void run() {
-
-        	paintView.setVisibility(View.VISIBLE);
-        	paintView.setFocusable(true);
-        	paintView.setOnTouchListener(paintView);
-        	
-    		Message msg = new Message();
-			msg.what = 1;
-			mHandler.sendMessage(msg);
-    	}
-    	
-    	private Handler mHandler = new Handler() {
-			
-			@Override
-			public void handleMessage(android.os.Message msg) {
-				super.handleMessage(msg);
-				switch (msg.what) {
-				case 1:
-
-					break;
-
-				default:
-					break;
-				}
-			}
-		};
-    }
     
     /**Get XMPP Connection */
 	@SuppressWarnings("rawtypes")
@@ -611,43 +595,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         });  
 	}
 	
-	/*
-	private class reDrawCircle implements Runnable{
 
-		@Override
-		public void run() {
-			Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-			paint.setColor(Color.RED);
-		    paint.setStyle(Style.STROKE);
-			if (mSurfaceHolder.getSurface().isValid()) {
-				Log.i("ddddddddddddd ", "ddddddddddddd");
-                Canvas canvas = mSurfaceHolder.lockCanvas();
-                canvas.drawColor(Color.BLACK);
-                canvas.drawCircle(100, 100, 50, paint);
-                mSurfaceHolder.unlockCanvasAndPost(canvas);
-            }else
-            	Log.i("........", ".................");
-			Message msg = new Message();
-			msg.what = 1;
-			drawHandler.sendMessage(msg);
-		}
-		@SuppressLint("HandlerLeak")
-		private Handler drawHandler = new Handler(){
-			
-			 @Override
-			 public void handleMessage(Message msg) {
-				 switch(msg.what){
-				 case 1:
-					 Log.i("DRAW-CIRCLE ", "success!");
-					 break;
-				 default:
-					 
-					 break;
-				 }
-			 }
-		};
-	}
-	*/
     @Override
     protected void onPause() {
         super.onPause();
@@ -867,20 +815,20 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         @Override
         public void onReceive(Context context, Intent intent)
         {
-            String action = intent.getAction();
-            if (action.equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)) {
-                int batteryLevel = intent.getIntExtra("level", 0);
-                if (batteryLevel >= 50)
-                    mBattery.setTextColor(Color.GREEN);
-                else if (batteryLevel >= 30)
-                    mBattery.setTextColor(Color.YELLOW);
-                else
-                    mBattery.setTextColor(Color.RED);
-                mBattery.setText(String.format("%d%%", batteryLevel));
-            }
-            else if (action.equalsIgnoreCase(VLCApplication.SLEEP_INTENT)) {
-                finish();
-            }
+//            String action = intent.getAction();
+//            if (action.equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)) {
+//                int batteryLevel = intent.getIntExtra("level", 0);
+//                if (batteryLevel >= 50)
+//                    mBattery.setTextColor(Color.GREEN);
+//                else if (batteryLevel >= 30)
+//                    mBattery.setTextColor(Color.YELLOW);
+//                else
+//                    mBattery.setTextColor(Color.RED);
+//                mBattery.setText(String.format("%d%%", batteryLevel));
+//            }
+//            else if (action.equalsIgnoreCase(VLCApplication.SLEEP_INTENT)) {
+//                finish();
+//            }
         }
     };
 
@@ -923,64 +871,64 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     /**
      * Lock screen rotation
      */
-    private void lockScreen() {
-        if(mScreenOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR) {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
-                setRequestedOrientation(14 /* SCREEN_ORIENTATION_LOCKED */);
-            else
-                setRequestedOrientation(getScreenOrientation());
-        }
-        showInfo(R.string.locked, 1000);
-        mLock.setBackgroundResource(R.drawable.ic_locked);
-        mTime.setEnabled(false);
-        mSeekbar.setEnabled(false);
-        mLength.setEnabled(false);
-        hideOverlay(true);
-    }
-
-    /**
-     * Remove screen lock
-     */
-    private void unlockScreen() {
-        if(mScreenOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR)
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-        showInfo(R.string.unlocked, 1000);
-        mLock.setBackgroundResource(R.drawable.ic_lock);
-        mTime.setEnabled(true);
-        mSeekbar.setEnabled(true);
-        mLength.setEnabled(true);
-        mShowing = false;
-        showOverlay();
-    }
+//    private void lockScreen() {
+//        if(mScreenOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR) {
+//            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
+//                setRequestedOrientation(14 /* SCREEN_ORIENTATION_LOCKED */);
+//            else
+//                setRequestedOrientation(getScreenOrientation());
+//        }
+//        showInfo(R.string.locked, 1000);
+//        mLock.setBackgroundResource(R.drawable.ic_locked);
+//        mTime.setEnabled(false);
+//        mSeekbar.setEnabled(false);
+//        mLength.setEnabled(false);
+//        hideOverlay(true);
+//    }
+//
+//    /**
+//     * Remove screen lock
+//     */
+//    private void unlockScreen() {
+//        if(mScreenOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR)
+//            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+//        showInfo(R.string.unlocked, 1000);
+//        mLock.setBackgroundResource(R.drawable.ic_lock);
+//        mTime.setEnabled(true);
+//        mSeekbar.setEnabled(true);
+//        mLength.setEnabled(true);
+//        mShowing = false;
+//        showOverlay();
+//    }
 
     /**
      * Show text in the info view for "duration" milliseconds
      * @param text
      * @param duration
      */
-    private void showInfo(String text, int duration) {
-        mInfo.setVisibility(View.VISIBLE);
-        mInfo.setText(text);
-        mHandler.removeMessages(FADE_OUT_INFO);
-        mHandler.sendEmptyMessageDelayed(FADE_OUT_INFO, duration);
-    }
-
-    private void showInfo(int textid, int duration) {
-        mInfo.setVisibility(View.VISIBLE);
-        mInfo.setText(textid);
-        mHandler.removeMessages(FADE_OUT_INFO);
-        mHandler.sendEmptyMessageDelayed(FADE_OUT_INFO, duration);
-    }
-
-    /**
-     * Show text in the info view
-     * @param text
-     */
-    private void showInfo(String text) {
-        mInfo.setVisibility(View.VISIBLE);
-        mInfo.setText(text);
-        mHandler.removeMessages(FADE_OUT_INFO);
-    }
+//    private void showInfo(String text, int duration) {
+//        mInfo.setVisibility(View.VISIBLE);
+//        mInfo.setText(text);
+//        mHandler.removeMessages(FADE_OUT_INFO);
+//        mHandler.sendEmptyMessageDelayed(FADE_OUT_INFO, duration);
+//    }
+//
+//    private void showInfo(int textid, int duration) {
+//        mInfo.setVisibility(View.VISIBLE);
+//        mInfo.setText(textid);
+//        mHandler.removeMessages(FADE_OUT_INFO);
+//        mHandler.sendEmptyMessageDelayed(FADE_OUT_INFO, duration);
+//    }
+//
+//    /**
+//     * Show text in the info view
+//     * @param text
+//     */
+//    private void showInfo(String text) {
+//        mInfo.setVisibility(View.VISIBLE);
+//        mInfo.setText(text);
+//        mHandler.removeMessages(FADE_OUT_INFO);
+//    }
 
     /**
      * hide the info view with "delay" milliseconds delay
@@ -997,12 +945,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         hideInfo(0);
     }
 
-    private void fadeOutInfo() {
-        if (mInfo.getVisibility() == View.VISIBLE)
-            mInfo.startAnimation(AnimationUtils.loadAnimation(
-                    VideoPlayerActivity.this, android.R.anim.fade_out));
-        mInfo.setVisibility(View.INVISIBLE);
-    }
+//    private void fadeOutInfo() {
+//        if (mInfo.getVisibility() == View.VISIBLE)
+//            mInfo.startAnimation(AnimationUtils.loadAnimation(
+//                    VideoPlayerActivity.this, android.R.anim.fade_out));
+//        mInfo.setVisibility(View.INVISIBLE);
+//    }
 
     @TargetApi(Build.VERSION_CODES.FROYO)
     private int changeAudioFocus(boolean acquire) {
@@ -1149,7 +1097,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
             switch (msg.what) {
                 case FADE_OUT:
-                    activity.hideOverlay(false);
+//                    activity.hideOverlay(false);
                     break;
                 case SHOW_PROGRESS:
                     int pos = activity.setOverlayProgress();
@@ -1162,7 +1110,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
                     activity.changeSurfaceSize();
                     break;
                 case FADE_OUT_INFO:
-                    activity.fadeOutInfo();
+//                    activity.fadeOutInfo();
                     break;
                 case AUDIO_SERVICE_CONNECTION_SUCCESS:
                     activity.startPlayback();
@@ -1351,30 +1299,41 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         SurfaceHolder subtitlesSurfaceHolder;
         FrameLayout surfaceFrame;
 
+        SurfaceView paintview;
+        SurfaceHolder paintviewHolder;
+        
         if (mPresentation == null) {
             surface = mSurface;
             subtitlesSurface = mSubtitlesSurface;
             surfaceHolder = mSurfaceHolder;
             subtitlesSurfaceHolder = mSubtitlesSurfaceHolder;
             surfaceFrame = mSurfaceFrame;
+            
+//            paintview = paintView;
+//            paintviewHolder = paintViewHolder;
         } else {
             surface = mPresentation.mSurface;
             subtitlesSurface = mPresentation.mSubtitlesSurface;
             surfaceHolder = mPresentation.mSurfaceHolder;
             subtitlesSurfaceHolder = mPresentation.mSubtitlesSurfaceHolder;
             surfaceFrame = mPresentation.mSurfaceFrame;
+            
+//            paintview = mPresentation.paintView;
+//            paintviewHolder = mPresentation.paintViewHolder;
         }
 
         // force surface buffer size
         surfaceHolder.setFixedSize(mVideoWidth, mVideoHeight);
         subtitlesSurfaceHolder.setFixedSize(mVideoWidth, mVideoHeight);
-
+//        paintviewHolder.setFixedSize(mVideoWidth, mVideoHeight);
+        
         // set display size
         LayoutParams lp = surface.getLayoutParams();
         lp.width  = (int) Math.ceil(dw * mVideoWidth / mVideoVisibleWidth);
         lp.height = (int) Math.ceil(dh * mVideoHeight / mVideoVisibleHeight);
         surface.setLayoutParams(lp);
         subtitlesSurface.setLayoutParams(lp);
+//        paintview.setLayoutParams(lp);
 
         // set frame size (crop if necessary)
         lp = surfaceFrame.getLayoutParams();
@@ -1384,6 +1343,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         surface.invalidate();
         subtitlesSurface.invalidate();
+//        paintview.invalidate();
     }
 
     /**
@@ -1391,51 +1351,68 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
      */
     //////HERE IS THE TOUCH EVENT///////////////////////////////
     /***********************************88************/
-    
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (mIsLocked) {
-            // locked, only handle show/hide & ignore all actions
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (!mShowing) {
-                    showOverlay();
-                } else {
-                    hideOverlay(true);
-                }
-            }
-            return false;
-        }
+//        if (mIsLocked) {
+//            // locked, only handle show/hide & ignore all actions
+//            if (event.getAction() == MotionEvent.ACTION_UP) {
+//                if (!mShowing) {
+//                    showOverlay();
+//                } else {
+//                    hideOverlay(true);
+//                }
+//            }
+//            return false;
+//        }
 
-        DisplayMetrics screen = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(screen);
+//        DisplayMetrics screen = new DisplayMetrics();
+//        getWindowManager().getDefaultDisplay().getMetrics(screen);
+//
+//        if (mSurfaceYDisplayRange == 0)
+//            mSurfaceYDisplayRange = Math.min(screen.widthPixels, screen.heightPixels);
+//
+//        float y_changed = event.getRawY() - mTouchY;
+//        float x_changed = event.getRawX() - mTouchX;
+//
+//        // coef is the gradient's move to determine a neutral zone
+//        float coef = Math.abs (y_changed / x_changed);
+//        float xgesturesize = ((x_changed / screen.xdpi) * 2.54f);
+//
+//        /* Offset for Mouse Events */
+//        int[] offset = new int[2];
+//        mSurface.getLocationOnScreen(offset);
+//        int xTouch = Math.round((event.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth());
+//        int yTouch = Math.round((event.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight());
 
-        if (mSurfaceYDisplayRange == 0)
-            mSurfaceYDisplayRange = Math.min(screen.widthPixels, screen.heightPixels);
-
-        float y_changed = event.getRawY() - mTouchY;
-        float x_changed = event.getRawX() - mTouchX;
-
-        // coef is the gradient's move to determine a neutral zone
-        float coef = Math.abs (y_changed / x_changed);
-        float xgesturesize = ((x_changed / screen.xdpi) * 2.54f);
-
-        /* Offset for Mouse Events */
-        int[] offset = new int[2];
-        mSurface.getLocationOnScreen(offset);
-        int xTouch = Math.round((event.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth());
-        int yTouch = Math.round((event.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight());
-
+        float touchX = event.getX();
+		float touchY = event.getY();	
+		
+		
         switch (event.getAction()) {
 
         case MotionEvent.ACTION_DOWN:
+//			Canvas canvas = paintViewHolder.lockCanvas();
+//            canvas.drawColor(Color.TRANSPARENT);
+//            canvas.drawCircle(touchX, touchY, 50, mPaint);
+//            paintViewHolder.unlockCanvasAndPost(canvas);
+//
+//    		Log.i("TOUCH++COORDINATE", Float.toString(touchX));
+//    		mSurface.invalidate();
+//        	paintView.setVisibility(View.VISIBLE);
+//    		paintView.setFocusable(true);
+        	thread.setBubble(touchX, touchY);
+        	Log.i("TOUCH++COORDINATE", Float.toString(touchX)+","+Float.toString(touchY));
+
+ /*
             // Audio
-            mTouchY = event.getRawY();
-            mVol = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-            mTouchAction = TOUCH_NONE;
-            // Seek
-            mTouchX = event.getRawX();
-            // Mouse events for the core
-            LibVLC.sendMouseEvent(MotionEvent.ACTION_DOWN, 0, xTouch, yTouch);
+//            mTouchY = event.getRawY();
+//            mVol = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+//            mTouchAction = TOUCH_NONE;
+//            // Seek
+//            mTouchX = event.getRawX();
+//            // Mouse events for the core
+//            LibVLC.sendMouseEvent(MotionEvent.ACTION_DOWN, 0, xTouch, yTouch);
             break;
 
         case MotionEvent.ACTION_MOVE:
@@ -1469,7 +1446,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             LibVLC.sendMouseEvent(MotionEvent.ACTION_UP, 0, xTouch, yTouch);
 
             // Audio or Brightness
-            if ( mTouchAction == TOUCH_NONE) {
+            if ( mTouchAction == TOUCH_NONE) {  			              
                 if (!mShowing) {
                     showOverlay();
                 } else {
@@ -1478,60 +1455,103 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             }
             // Seek
             doSeekTouch(coef, xgesturesize, true);
+            
+ */
             break;
         }
-        return mTouchAction != TOUCH_NONE;
+//        return mTouchAction != TOUCH_NONE;
+        return true;
     }
+	
+    class BubbleThread extends Thread {
+    	private boolean run = false;
+    	  private float bubbleX;
+    	  private float bubbleY;
+   	    
+    	  public BubbleThread(SurfaceHolder surfaceHolder) {
+    		  paintViewHolder = surfaceHolder;
+    	  }
+    	  
+    	  protected void setBubble(float x, float y) {
+    		 	bubbleX = x;
+    		   	bubbleY = y;
+    	  }
+    	  public void setRunning(boolean b) {
+  			run = b;
+  		}
+    	  public void run() {
+    		  while(run){
+    		      Canvas c = null;
+    		      try {
+    		        c = paintViewHolder.lockCanvas(null);
+    		        synchronized (paintViewHolder) {
+    		        	c.restore();
+    		        	c.drawColor(Color.TRANSPARENT);
+    	    	    	c.drawCircle(bubbleX, bubbleY, 50, mPaint);
+    		        }
+    		      } finally {
+    		        if (c != null) {
+    		        	paintViewHolder.unlockCanvasAndPost(c);
+    		        }
+    		      }	        
+    	  	}
+    	  }
+    	    
+    	}
+    
+    public BubbleThread getThread() {
+        return thread;
+      }
+	
+//    private void doSeekTouch(float coef, float gesturesize, boolean seek) {
+//        // No seek action if coef > 0.5 and gesturesize < 1cm
+//        if (coef > 0.5 || Math.abs(gesturesize) < 1 || !mCanSeek)
+//            return;
+//
+//        if (mTouchAction != TOUCH_NONE && mTouchAction != TOUCH_SEEK)
+//            return;
+//        mTouchAction = TOUCH_SEEK;
+//
+//        // Always show seekbar when searching
+//        if (!mShowing) showOverlay();
+//
+//        long length = mLibVLC.getLength();
+//        long time = mLibVLC.getTime();
+//
+//        // Size of the jump, 10 minutes max (600000), with a bi-cubic progression, for a 8cm gesture
+//        int jump = (int) (Math.signum(gesturesize) * ((600000 * Math.pow((gesturesize / 8), 4)) + 3000));
+//
+//        // Adjust the jump
+//        if ((jump > 0) && ((time + jump) > length))
+//            jump = (int) (length - time);
+//        if ((jump < 0) && ((time + jump) < 0))
+//            jump = (int) -time;
+//
+//        //Jump !
+//        if (seek && length > 0)
+//            mLibVLC.setTime(time + jump);
+//
+//        if (length > 0)
+//            //Show the jump's size
+//            showInfo(String.format("%s%s (%s)",
+//                    jump >= 0 ? "+" : "",
+//                    Strings.millisToString(jump),
+//                    Strings.millisToString(time + jump)), 1000);
+//        else
+//            showInfo(R.string.unseekable_stream, 1000);
+//    }
 
-    private void doSeekTouch(float coef, float gesturesize, boolean seek) {
-        // No seek action if coef > 0.5 and gesturesize < 1cm
-        if (coef > 0.5 || Math.abs(gesturesize) < 1 || !mCanSeek)
-            return;
-
-        if (mTouchAction != TOUCH_NONE && mTouchAction != TOUCH_SEEK)
-            return;
-        mTouchAction = TOUCH_SEEK;
-
-        // Always show seekbar when searching
-        if (!mShowing) showOverlay();
-
-        long length = mLibVLC.getLength();
-        long time = mLibVLC.getTime();
-
-        // Size of the jump, 10 minutes max (600000), with a bi-cubic progression, for a 8cm gesture
-        int jump = (int) (Math.signum(gesturesize) * ((600000 * Math.pow((gesturesize / 8), 4)) + 3000));
-
-        // Adjust the jump
-        if ((jump > 0) && ((time + jump) > length))
-            jump = (int) (length - time);
-        if ((jump < 0) && ((time + jump) < 0))
-            jump = (int) -time;
-
-        //Jump !
-        if (seek && length > 0)
-            mLibVLC.setTime(time + jump);
-
-        if (length > 0)
-            //Show the jump's size
-            showInfo(String.format("%s%s (%s)",
-                    jump >= 0 ? "+" : "",
-                    Strings.millisToString(jump),
-                    Strings.millisToString(time + jump)), 1000);
-        else
-            showInfo(R.string.unseekable_stream, 1000);
-    }
-
-    private void doVolumeTouch(float y_changed) {
-        if (mTouchAction != TOUCH_NONE && mTouchAction != TOUCH_VOLUME)
-            return;
-        int delta = -(int) ((y_changed / mSurfaceYDisplayRange) * mAudioMax);
-        int vol = (int) Math.min(Math.max(mVol + delta, 0), mAudioMax);
-        if (delta != 0) {
-            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
-            mTouchAction = TOUCH_VOLUME;
-            showInfo(getString(R.string.volume) + '\u00A0' + Integer.toString(vol),1000);
-        }
-    }
+//    private void doVolumeTouch(float y_changed) {
+//        if (mTouchAction != TOUCH_NONE && mTouchAction != TOUCH_VOLUME)
+//            return;
+//        int delta = -(int) ((y_changed / mSurfaceYDisplayRange) * mAudioMax);
+//        int vol = (int) Math.min(Math.max(mVol + delta, 0), mAudioMax);
+//        if (delta != 0) {
+//            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
+//            mTouchAction = TOUCH_VOLUME;
+//            showInfo(getString(R.string.volume) + '\u00A0' + Integer.toString(vol),1000);
+//        }
+//    }
 
     private void initBrightnessTouch() {
         float brightnesstemp = 0.01f;
@@ -1549,53 +1569,53 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         mIsFirstBrightnessGesture = false;
     }
 
-    private void doBrightnessTouch(float y_changed) {
-        if (mTouchAction != TOUCH_NONE && mTouchAction != TOUCH_BRIGHTNESS)
-            return;
-        if (mIsFirstBrightnessGesture) initBrightnessTouch();
-        mTouchAction = TOUCH_BRIGHTNESS;
-
-        // Set delta : 0.07f is arbitrary for now, it possibly will change in the future
-        float delta = - y_changed / mSurfaceYDisplayRange * 0.07f;
-
-        // Estimate and adjust Brightness
-        WindowManager.LayoutParams lp = getWindow().getAttributes();
-        lp.screenBrightness =  Math.min(Math.max(lp.screenBrightness + delta, 0.01f), 1);
-
-        // Set Brightness
-        getWindow().setAttributes(lp);
-        showInfo(getString(R.string.brightness) + '\u00A0' + Math.round(lp.screenBrightness*15),1000);
-    }
+//    private void doBrightnessTouch(float y_changed) {
+//        if (mTouchAction != TOUCH_NONE && mTouchAction != TOUCH_BRIGHTNESS)
+//            return;
+//        if (mIsFirstBrightnessGesture) initBrightnessTouch();
+//        mTouchAction = TOUCH_BRIGHTNESS;
+//
+//        // Set delta : 0.07f is arbitrary for now, it possibly will change in the future
+//        float delta = - y_changed / mSurfaceYDisplayRange * 0.07f;
+//
+//        // Estimate and adjust Brightness
+//        WindowManager.LayoutParams lp = getWindow().getAttributes();
+//        lp.screenBrightness =  Math.min(Math.max(lp.screenBrightness + delta, 0.01f), 1);
+//
+//        // Set Brightness
+//        getWindow().setAttributes(lp);
+//        showInfo(getString(R.string.brightness) + '\u00A0' + Math.round(lp.screenBrightness*15),1000);
+//    }
 
     /**
      * handle changes of the seekbar (slicer)
      */
-    private final OnSeekBarChangeListener mSeekListener = new OnSeekBarChangeListener() {
-
-        @Override
-        public void onStartTrackingTouch(SeekBar seekBar) {
-            mDragging = true;
-            showOverlay(OVERLAY_INFINITE);
-        }
-
-        @Override
-        public void onStopTrackingTouch(SeekBar seekBar) {
-            mDragging = false;
-            showOverlay();
-            hideInfo();
-        }
-
-        @Override
-        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            if (fromUser && mCanSeek) {
-                mLibVLC.setTime(progress);
-                setOverlayProgress();
-                mTime.setText(Strings.millisToString(progress));
-                showInfo(Strings.millisToString(progress));
-            }
-
-        }
-    };
+//    private final OnSeekBarChangeListener mSeekListener = new OnSeekBarChangeListener() {
+//
+//        @Override
+//        public void onStartTrackingTouch(SeekBar seekBar) {
+//            mDragging = true;
+//            showOverlay(OVERLAY_INFINITE);
+//        }
+//
+//        @Override
+//        public void onStopTrackingTouch(SeekBar seekBar) {
+//            mDragging = false;
+//            showOverlay();
+//            hideInfo();
+//        }
+//
+//        @Override
+//        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+//            if (fromUser && mCanSeek) {
+//                mLibVLC.setTime(progress);
+//                setOverlayProgress();
+//                mTime.setText(Strings.millisToString(progress));
+//                showInfo(Strings.millisToString(progress));
+//            }
+//
+//        }
+//    };
 
     /**
     *
@@ -1702,36 +1722,36 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     /**
     *
     */
-    private final OnClickListener mPlayPauseListener = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            if (mLibVLC.isPlaying())
-                pause();
-            else
-                play();
-            showOverlay();
-        }
-    };
+//    private final OnClickListener mPlayPauseListener = new OnClickListener() {
+//        @Override
+//        public void onClick(View v) {
+//            if (mLibVLC.isPlaying())
+//                pause();
+//            else
+//                play();
+//            showOverlay();
+//        }
+//    };
 
     /**
     *
     */
-    private final OnClickListener mBackwardListener = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            seek(-10000);
-        }
-    };
+//    private final OnClickListener mBackwardListener = new OnClickListener() {
+//        @Override
+//        public void onClick(View v) {
+//            seek(-10000);
+//        }
+//    };
 
     /**
     *
     */
-    private final OnClickListener mForwardListener = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            seek(10000);
-        }
-    };
+//    private final OnClickListener mForwardListener = new OnClickListener() {
+//        @Override
+//        public void onClick(View v) {
+//            seek(10000);
+//        }
+//    };
 
     public void seek(int delta) {
         // unseekable stream
@@ -1746,68 +1766,68 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     /**
      *
      */
-    private final OnClickListener mLockListener = new OnClickListener() {
-
-        @Override
-        public void onClick(View v) {
-            if (mIsLocked) {
-                mIsLocked = false;
-                unlockScreen();
-            } else {
-                mIsLocked = true;
-                lockScreen();
-            }
-        }
-    };
+//    private final OnClickListener mLockListener = new OnClickListener() {
+//
+//        @Override
+//        public void onClick(View v) {
+//            if (mIsLocked) {
+//                mIsLocked = false;
+//                unlockScreen();
+//            } else {
+//                mIsLocked = true;
+//                lockScreen();
+//            }
+//        }
+//    };
 
     /**
      *
      */
-    private final OnClickListener mSizeListener = new OnClickListener() {
-
-        @Override
-        public void onClick(View v) {
-
-            if (mCurrentSize < SURFACE_ORIGINAL) {
-                mCurrentSize++;
-            } else {
-                mCurrentSize = 0;
-            }
-            changeSurfaceSize();
-            switch (mCurrentSize) {
-                case SURFACE_BEST_FIT:
-                    showInfo(R.string.surface_best_fit, 1000);
-                    break;
-                case SURFACE_FIT_HORIZONTAL:
-                    showInfo(R.string.surface_fit_horizontal, 1000);
-                    break;
-                case SURFACE_FIT_VERTICAL:
-                    showInfo(R.string.surface_fit_vertical, 1000);
-                    break;
-                case SURFACE_FILL:
-                    showInfo(R.string.surface_fill, 1000);
-                    break;
-                case SURFACE_16_9:
-                    showInfo("16:9", 1000);
-                    break;
-                case SURFACE_4_3:
-                    showInfo("4:3", 1000);
-                    break;
-                case SURFACE_ORIGINAL:
-                    showInfo(R.string.surface_original, 1000);
-                    break;
-            }
-            showOverlay();
-        }
-    };
-
-    private final OnClickListener mRemainingTimeListener = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            mDisplayRemainingTime = !mDisplayRemainingTime;
-            showOverlay();
-        }
-    };
+//    private final OnClickListener mSizeListener = new OnClickListener() {
+//
+//        @Override
+//        public void onClick(View v) {
+//
+//            if (mCurrentSize < SURFACE_ORIGINAL) {
+//                mCurrentSize++;
+//            } else {
+//                mCurrentSize = 0;
+//            }
+//            changeSurfaceSize();
+//            switch (mCurrentSize) {
+//                case SURFACE_BEST_FIT:
+//                    showInfo(R.string.surface_best_fit, 1000);
+//                    break;
+//                case SURFACE_FIT_HORIZONTAL:
+//                    showInfo(R.string.surface_fit_horizontal, 1000);
+//                    break;
+//                case SURFACE_FIT_VERTICAL:
+//                    showInfo(R.string.surface_fit_vertical, 1000);
+//                    break;
+//                case SURFACE_FILL:
+//                    showInfo(R.string.surface_fill, 1000);
+//                    break;
+//                case SURFACE_16_9:
+//                    showInfo("16:9", 1000);
+//                    break;
+//                case SURFACE_4_3:
+//                    showInfo("4:3", 1000);
+//                    break;
+//                case SURFACE_ORIGINAL:
+//                    showInfo(R.string.surface_original, 1000);
+//                    break;
+//            }
+//            showOverlay();
+//        }
+//    };
+//
+//    private final OnClickListener mRemainingTimeListener = new OnClickListener() {
+//        @Override
+//        public void onClick(View v) {
+//            mDisplayRemainingTime = !mDisplayRemainingTime;
+//            showOverlay();
+//        }
+//    };
 
     /**
      * attach and disattach surface to the lib
@@ -1829,6 +1849,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
+
         }
 
         @Override
@@ -1856,11 +1877,41 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         }
     };
 
+    private final SurfaceHolder.Callback paintViewCallback = new Callback() {
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        	if(mLibVLC != null)
+                mLibVLC.attachSurface(holder.getSurface(),VideoPlayerActivity.this);
+        }
+
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+        	thread = new BubbleThread(holder);
+        	thread.setRunning(true);
+            thread.start();
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+        	if(mLibVLC != null)
+                mLibVLC.detachSurface();
+        	 boolean retry = true;
+        	 thread.setRunning(false);
+             while (retry) {
+               try {
+                 thread.join();
+                 retry = false;
+               } catch (InterruptedException e) {
+               }
+             }
+        }
+    };
+    
     /**
      * show overlay the the default timeout
      */
     private void showOverlay() {
-        showOverlay(OVERLAY_TIMEOUT);
+//        showOverlay(OVERLAY_TIMEOUT);
     }
 
     /**
@@ -1872,15 +1923,15 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         mHandler.sendEmptyMessage(SHOW_PROGRESS);
         if (!mShowing) {
             mShowing = true;
-            if (!mIsLocked) {
-                mOverlayHeader.setVisibility(View.VISIBLE);
-                mOverlayOption.setVisibility(View.VISIBLE);
-                mPlayPause.setVisibility(View.VISIBLE);
-                mMenu.setVisibility(View.VISIBLE);
-                dimStatusBar(false);
-            }
-            mOverlayProgress.setVisibility(View.VISIBLE);
-            if (mPresentation != null) mOverlayBackground.setVisibility(View.VISIBLE);
+//            if (!mIsLocked) {
+//                mOverlayHeader.setVisibility(View.VISIBLE);
+//                mOverlayOption.setVisibility(View.VISIBLE);
+//                mPlayPause.setVisibility(View.VISIBLE);
+//                mMenu.setVisibility(View.VISIBLE);
+//                dimStatusBar(false);
+//            }
+//            mOverlayProgress.setVisibility(View.VISIBLE);
+//            if (mPresentation != null) mOverlayBackground.setVisibility(View.VISIBLE);
         }
         Message msg = mHandler.obtainMessage(FADE_OUT);
         if (timeout != 0) {
@@ -1894,31 +1945,31 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     /**
      * hider overlay
      */
-    private void hideOverlay(boolean fromUser) {
-        if (mShowing) {
-            mHandler.removeMessages(SHOW_PROGRESS);
-            Log.i(TAG, "remove View!");
-            if (mOverlayTips != null) mOverlayTips.setVisibility(View.INVISIBLE);
-            if (!fromUser && !mIsLocked) {
-                mOverlayHeader.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
-                mOverlayOption.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
-                mOverlayProgress.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
-                mPlayPause.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
-                mMenu.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
-            }
-            if (mPresentation != null) {
-                mOverlayBackground.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
-                mOverlayBackground.setVisibility(View.INVISIBLE);
-            }
-            mOverlayHeader.setVisibility(View.INVISIBLE);
-            mOverlayOption.setVisibility(View.INVISIBLE);
-            mOverlayProgress.setVisibility(View.INVISIBLE);
-            mPlayPause.setVisibility(View.INVISIBLE);
-            mMenu.setVisibility(View.INVISIBLE);
-            mShowing = false;
-            dimStatusBar(true);
-        }
-    }
+//    private void hideOverlay(boolean fromUser) {
+//        if (mShowing) {
+//            mHandler.removeMessages(SHOW_PROGRESS);
+//            Log.i(TAG, "remove View!");
+//            if (mOverlayTips != null) mOverlayTips.setVisibility(View.INVISIBLE);
+//            if (!fromUser && !mIsLocked) {
+//                mOverlayHeader.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
+//                mOverlayOption.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
+//                mOverlayProgress.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
+//                mPlayPause.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
+//                mMenu.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
+//            }
+//            if (mPresentation != null) {
+//                mOverlayBackground.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
+//                mOverlayBackground.setVisibility(View.INVISIBLE);
+//            }
+//            mOverlayHeader.setVisibility(View.INVISIBLE);
+//            mOverlayOption.setVisibility(View.INVISIBLE);
+//            mOverlayProgress.setVisibility(View.INVISIBLE);
+//            mPlayPause.setVisibility(View.INVISIBLE);
+//            mMenu.setVisibility(View.INVISIBLE);
+//            mShowing = false;
+//            dimStatusBar(true);
+//        }
+//    }
 
     /**
      * Dim the status bar and/or navigation icons when needed on Android 3.x.
@@ -1943,12 +1994,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         if (mLibVLC == null)
             return;
 
-        if (mPresentation == null)
-            mPlayPause.setBackgroundResource(mLibVLC.isPlaying() ? R.drawable.ic_pause_circle
-                            : R.drawable.ic_play_circle);
-        else
-            mPlayPause.setBackgroundResource(mLibVLC.isPlaying() ? R.drawable.ic_pause_circle_big_o
-                            : R.drawable.ic_play_circle_big_o);
+//        if (mPresentation == null)
+//            mPlayPause.setBackgroundResource(mLibVLC.isPlaying() ? R.drawable.ic_pause_circle
+//                            : R.drawable.ic_play_circle);
+//        else
+//            mPlayPause.setBackgroundResource(mLibVLC.isPlaying() ? R.drawable.ic_pause_circle_big_o
+//                            : R.drawable.ic_play_circle_big_o);
     }
 
     /**
@@ -1968,15 +2019,15 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         // Update all view elements
         boolean isSeekable = mEnableJumpButtons && length > 0;
-        mBackward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
-        mForward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
-        mSeekbar.setMax(length);
-        mSeekbar.setProgress(time);
-        mSysTime.setText(DateFormat.getTimeFormat(this).format(new Date(System.currentTimeMillis())));
-        if (time >= 0) mTime.setText(Strings.millisToString(time));
-        if (length >= 0) mLength.setText(mDisplayRemainingTime && length > 0
-                ? "- " + Strings.millisToString(length - time)
-                : Strings.millisToString(length));
+//        mBackward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
+//        mForward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
+//        mSeekbar.setMax(length);
+//        mSeekbar.setProgress(time);
+//        mSysTime.setText(DateFormat.getTimeFormat(this).format(new Date(System.currentTimeMillis())));
+//        if (time >= 0) mTime.setText(Strings.millisToString(time));
+//        if (length >= 0) mLength.setText(mDisplayRemainingTime && length > 0
+//                ? "- " + Strings.millisToString(length - time)
+//                : Strings.millisToString(length));
 
         return time;
     }
@@ -1996,23 +2047,23 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         if(mAudioTracksList == null || force) {
             if (mLibVLC.getAudioTracksCount() > 2) {
                 mAudioTracksList = mLibVLC.getAudioTrackDescription();
-                mAudioTrack.setOnClickListener(mAudioTrackListener);
-                mAudioTrack.setVisibility(View.VISIBLE);
+//                mAudioTrack.setOnClickListener(mAudioTrackListener);
+//                mAudioTrack.setVisibility(View.VISIBLE);
             }
             else {
-                mAudioTrack.setVisibility(View.GONE);
-                mAudioTrack.setOnClickListener(null);
+//                mAudioTrack.setVisibility(View.GONE);
+//                mAudioTrack.setOnClickListener(null);
             }
         }
         if (mSubtitleTracksList == null || force) {
             if (mLibVLC.getSpuTracksCount() > 0) {
                 mSubtitleTracksList = mLibVLC.getSpuTrackDescription();
-                mSubtitle.setOnClickListener(mSubtitlesListener);
-                mSubtitle.setVisibility(View.VISIBLE);
+//                mSubtitle.setOnClickListener(mSubtitlesListener);
+//                mSubtitle.setVisibility(View.VISIBLE);
             }
             else {
-                mSubtitle.setVisibility(View.GONE);
-                mSubtitle.setOnClickListener(null);
+//                mSubtitle.setVisibility(View.GONE);
+//                mSubtitle.setOnClickListener(null);
             }
         }
     }
@@ -2021,18 +2072,18 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     /**
      *
      */
-    private void play() {
-        mLibVLC.play();
-        mSurface.setKeepScreenOn(true);
-    }
-
-    /**
-     *
-     */
-    private void pause() {
-        mLibVLC.pause();
-        mSurface.setKeepScreenOn(false);
-    }
+//    private void play() {
+//        mLibVLC.play();
+//        mSurface.setKeepScreenOn(true);
+//    }
+//
+//    /**
+//     *
+//     */
+//    private void pause() {
+//        mLibVLC.pause();
+//        mSurface.setKeepScreenOn(false);
+//    }
 
     /**
      * External extras:
@@ -2248,7 +2299,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         } else if(itemTitle != null) {
             title = itemTitle;
         }
-        mTitle.setText(title);
+//        mTitle.setText(title);
     }
 
     @SuppressWarnings("deprecation")
@@ -2392,11 +2443,21 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         private FrameLayout mSurfaceFrame;
         private LibVLC mLibVLC;
         
+//        private SurfaceView paintView;
+//        private SurfaceHolder paintViewHolder;
+        
+        private Paint mPaint = new Paint();
+        
         public SecondaryDisplay(Context context, Display display) {
             super(context, display);
             if (context instanceof Activity) {
                 setOwnerActivity((Activity) context);
             }
+            
+            
+            mPaint.setColor(Color.RED);
+    		mPaint.setStyle(Style.STROKE);
+    		
             try {
                 mLibVLC = VLCInstance.getLibVlcInstance();
             } catch (LibVlcException e) {
@@ -2442,6 +2503,11 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
                 mSubtitlesSurface.setVisibility(View.VISIBLE);
             Log.i(TAG, "Secondary display created");
             
+            
+//            paintView = (SurfaceView) findViewById(R.id.remote_drawView);
+//            paintViewHolder = paintView.getHolder();
+////            paintViewHolder.setFormat(PixelFormat.RGBA_8888);
+//            paintViewHolder.addCallback(activity.paintViewCallback);
         }
     }
 
@@ -2455,25 +2521,25 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         rotate.setInterpolator(new DecelerateInterpolator());
         rotate.setRepeatCount(RotateAnimation.INFINITE);
         anim.addAnimation(rotate);
-        mLoading.startAnimation(anim);
-        mLoadingText.setVisibility(View.VISIBLE);
+//        mLoading.startAnimation(anim);
+//        mLoadingText.setVisibility(View.VISIBLE);
     }
 
     /**
      * Stop the video loading animation.
      */
     private void stopLoadingAnimation() {
-        mLoading.setVisibility(View.INVISIBLE);
-        mLoading.clearAnimation();
-        mLoadingText.setVisibility(View.GONE);
+//        mLoading.setVisibility(View.INVISIBLE);
+//        mLoading.clearAnimation();
+//        mLoadingText.setVisibility(View.GONE);
     }
 
     public void onClickOverlayTips(View v) {
-        mOverlayTips.setVisibility(View.GONE);
+//        mOverlayTips.setVisibility(View.GONE);
     }
 
     public void onClickDismissTips(View v) {
-        mOverlayTips.setVisibility(View.GONE);
+//        mOverlayTips.setVisibility(View.GONE);
         Editor editor = mSettings.edit();
         editor.putBoolean(PREF_TIPS_SHOWN, true);
         editor.commit();
@@ -2496,18 +2562,18 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
              * Keep the overlay hidden in order to have touch events directly
              * transmitted to navigation handling.
              */
-            hideOverlay(false);
+//            hideOverlay(false);
         }
         else if (mHasMenu) {
             setESTrackLists(true);
             setESTracks();
 
             /* Show the return to menu button. */
-            mNavMenu.setVisibility(View.VISIBLE);
-            mNavMenu.setOnClickListener(mNavMenuListener);
+//            mNavMenu.setVisibility(View.VISIBLE);
+//            mNavMenu.setOnClickListener(mNavMenuListener);
         }
-        else
-            mNavMenu.setVisibility(View.GONE);
+//        else
+//            mNavMenu.setVisibility(View.GONE);
 
     }
 }

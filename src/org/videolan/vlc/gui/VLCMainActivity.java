@@ -782,7 +782,7 @@ public class VLCMainActivity extends ActionBarActivity {
         AlertDialog.Builder b = new AlertDialog.Builder(this);
         final EditText input = new EditText(this);
         //input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        input.setText("rtsp://129.128.184.46:8554/live.sdp");
+        input.setText("rtsp://218.204.223.237:554/live/1/66251FC11353191F/e7ooqwcfbqjoo80j.sdp");//rtsp://129.128.184.46:8554/live.sdp
         b.setTitle(R.string.open_mrl_dialog_title);
         b.setMessage(R.string.open_mrl_dialog_msg);
         b.setView(input);
