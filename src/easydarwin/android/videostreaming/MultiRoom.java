@@ -194,7 +194,7 @@ public class MultiRoom {
 	}
 	
 	/**Send message function*/
-	public void SendMessage(XMPPConnection connection, String room, EditText textMessage){
+	public void SendMessage(XMPPConnection connection, String room, String textMessage){
 		
 		//check for after videoPlaying back to streamingFragment
 		if(!connection.isConnected()){
@@ -207,21 +207,21 @@ public class MultiRoom {
 		}
 		if(room!=null){
 			MultiUserChat muc = new MultiUserChat(connection, room);  
-			String text = textMessage.getText().toString();
-			if(!text.equals("")&&text!=null){
+//			String text = textMessage.getText().toString();
+			if(!textMessage.equals("")&&textMessage!=null){
 				
 				Message message = new Message(room + "@conference.myria",Message.Type.groupchat);  
-	            message.setBody(text);  
+	            message.setBody(textMessage);  
 				try {
 					if (muc != null) {
 						muc.sendMessage(message);
-						Log.i("SEND-MSG-TO-ROOM", "Sending text " + text + " to " + room+"=="+muc.getRoom());
+						Log.i("SEND-MSG-TO-ROOM", "Sending text " + textMessage + " to " + room+"=="+muc.getRoom());
 					}
 				} catch (XMPPException e) {
 					e.printStackTrace();
 				} 
 	
-				textMessage.setText("");
+//				textMessage.setText("");
 			}else{
 				Toast.makeText(context, "The input cannot be null!",
 						Toast.LENGTH_SHORT).show();
@@ -229,7 +229,7 @@ public class MultiRoom {
 		}else{
 //			room = getChatRoom();
 			Log.i("MULTIROOM-SENDMESSAGE:", "room Name"+room);
-			Toast.makeText(context, "Room is null",
+			Toast.makeText(context, "Please join a Room first",
 					Toast.LENGTH_SHORT).show();
 		}
 	}

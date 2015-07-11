@@ -221,7 +221,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		textMessage.setOnEditorActionListener(new OnEditorActionListener() {	    
 		    @Override
 		    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-		    	mRoom.SendMessage(connection, room, textMessage);
+		    	mRoom.SendMessage(connection, room, textMessage.getText().toString());
+		    	textMessage.setText("");
 		    	return true;
 		    }
 		});
@@ -311,7 +312,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 //
 //			break;
 		case R.id.btn_send_message:
-			mRoom.SendMessage(connection, room, textMessage);
+			mRoom.SendMessage(connection, room, textMessage.getText().toString());
+			textMessage.setText("");
 			break;
 		}
 	}

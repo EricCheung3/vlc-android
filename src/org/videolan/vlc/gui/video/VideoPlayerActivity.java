@@ -426,7 +426,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		    
 		    @Override
 		    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-		    	mRoom.SendMessage(connection, invitedRoom, textMessage);
+		    	mRoom.SendMessage(connection, invitedRoom, textMessage.getText().toString());
+		    	textMessage.setText("");
 		    	return true;
 		    }
 		});
@@ -434,8 +435,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
 			@Override
 			public void onClick(View arg0) {
-				mRoom.SendMessage(connection, invitedRoom, textMessage);
-				}
+				mRoom.SendMessage(connection, invitedRoom, textMessage.getText().toString());
+				textMessage.setText("");
+			}
 		});
 
 		/** draw a circle when users touch the screen */
@@ -536,7 +538,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
 					Log.i("VIDEOPLAYERACTIVITY-ROOMNAME",invitedRoom+" success!");
 					// draw circle on screen according the coordination
-//					PAINTViewRoomMsgListener(connection, invitedRoom);
+					PAINTViewRoomMsgListener(connection, invitedRoom);
 					
 					try {
 						if(mRoom.joinChatRoom(connection,invitedRoom))
@@ -580,11 +582,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					@SuppressLint("NewApi")
 					public void run() {
 						// notification or chat...	
-						if(msg.equals("PaintView")){
+						if(msg.contains("PaintView")){
 							String[] coordination = msg.split(",");
-							Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
-							
-						} 
+							//Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
+							/** REDRAW CIRCLE according to the Coordinate*/ //(not test now)
+							thread.setBubble(Float.parseFloat(coordination[1]), Float.parseFloat(coordination[2]));
+							Log.i("REDRAW============", coordination[1]+","+coordination[2]);
+						}else
+							Toast.makeText(getApplicationContext(),fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show(); 
 					}
 				}); 
             }  
@@ -1305,8 +1310,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             subtitlesSurfaceHolder = mSubtitlesSurfaceHolder;
             surfaceFrame = mSurfaceFrame;
             
-//            paintview = paintView;
-//            paintviewHolder = paintViewHolder;
+            paintview = paintView;
+            paintviewHolder = paintViewHolder;
         } else {
             surface = mPresentation.mSurface;
             subtitlesSurface = mPresentation.mSubtitlesSurface;
@@ -1314,14 +1319,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             subtitlesSurfaceHolder = mPresentation.mSubtitlesSurfaceHolder;
             surfaceFrame = mPresentation.mSurfaceFrame;
             
-//            paintview = mPresentation.paintView;
-//            paintviewHolder = mPresentation.paintViewHolder;
+            paintview = mPresentation.paintView;
+            paintviewHolder = mPresentation.paintViewHolder;
         }
 
         // force surface buffer size
         surfaceHolder.setFixedSize(mVideoWidth, mVideoHeight);
         subtitlesSurfaceHolder.setFixedSize(mVideoWidth, mVideoHeight);
-//        paintviewHolder.setFixedSize(mVideoWidth, mVideoHeight);
+        paintviewHolder.setFixedSize(mVideoWidth, mVideoHeight);
         
         // set display size
         LayoutParams lp = surface.getLayoutParams();
@@ -1329,7 +1334,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         lp.height = (int) Math.ceil(dh * mVideoHeight / mVideoVisibleHeight);
         surface.setLayoutParams(lp);
         subtitlesSurface.setLayoutParams(lp);
-//        paintview.setLayoutParams(lp);
+        paintview.setLayoutParams(lp);
 
         // set frame size (crop if necessary)
         lp = surfaceFrame.getLayoutParams();
@@ -1339,7 +1344,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         surface.invalidate();
         subtitlesSurface.invalidate();
-//        paintview.invalidate();
+        paintview.invalidate();
     }
 
     /**
@@ -1398,6 +1403,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //        	paintView.setVisibility(View.VISIBLE);
 //    		paintView.setFocusable(true);
         	thread.setBubble(touchX, touchY);
+	        /** send message*/
+	        String coordinateMsg = "PaintView," + Float.toString(touchX) + "," + Float.toString(touchY);
+	        mRoom.SendMessage(connection, invitedRoom, coordinateMsg);
+	        
         	Log.i("TOUCH++COORDINATE", Float.toString(touchX)+","+Float.toString(touchY));
 
  /*
@@ -1478,13 +1487,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     	  public void run() {
     		  while(run){
     		      Canvas c = null;
-    		      try {
+    		      try {//  draw the circle on screen
     		        c = paintViewHolder.lockCanvas(null);
     		        synchronized (paintViewHolder) {
 //    		        	c.restore();
     		        	c.drawColor(Color.TRANSPARENT);
     	    	    	c.drawCircle(bubbleX, bubbleY, 50, mPaint);
     		        }
+    		        
     		      } catch (IllegalArgumentException e) {
                       e.printStackTrace();
     		      }finally {
@@ -2445,10 +2455,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         private FrameLayout mSurfaceFrame;
         private LibVLC mLibVLC;
         
-//        private SurfaceView paintView;
-//        private SurfaceHolder paintViewHolder;
+        private SurfaceView paintView;
+        private SurfaceHolder paintViewHolder;
         
-        private Paint mPaint = new Paint();
+        private Paint mPaint;
         
         public SecondaryDisplay(Context context, Display display) {
             super(context, display);
@@ -2456,7 +2466,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
                 setOwnerActivity((Activity) context);
             }
             
-            
+            mPaint = new Paint();
             mPaint.setColor(Color.RED);
     		mPaint.setStyle(Style.STROKE);
     		
@@ -2506,10 +2516,11 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             Log.i(TAG, "Secondary display created");
             
             
-//            paintView = (SurfaceView) findViewById(R.id.remote_drawView);
-//            paintViewHolder = paintView.getHolder();
-////            paintViewHolder.setFormat(PixelFormat.RGBA_8888);
-//            paintViewHolder.addCallback(activity.paintViewCallback);
+            paintView = (SurfaceView) findViewById(R.id.remote_drawView);
+            paintViewHolder = paintView.getHolder();
+            paintView.setZOrderOnTop(true);
+            paintViewHolder.setFormat(PixelFormat.TRANSPARENT);
+            paintViewHolder.addCallback(activity.paintViewCallback);
         }
     }
 
