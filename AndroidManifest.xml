@@ -93,8 +93,10 @@
             android:theme="@style/Theme.VLC" />
         <activity
             android:name=".gui.video.VideoPlayerActivity"
-            android:configChanges="orientation|screenSize"
-            android:theme="@style/Theme.VLC.Fullscreen" >
+			android:configChanges="orientation|screenSize"	
+			 > 
+            <!--android:configChanges="orientation|screenSize"
+                android:theme="@style/Theme.VLC.Fullscreen" -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 

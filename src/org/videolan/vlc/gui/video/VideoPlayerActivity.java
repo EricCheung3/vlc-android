@@ -86,6 +86,8 @@ import android.graphics.ImageFormat;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffXfermode;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.MediaRouter;
@@ -98,6 +100,7 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings.SettingNotFoundException;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.KeyEvent;
@@ -122,7 +125,6 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import easydarwin.android.videostreaming.MultiRoom;
-import easydarwin.android.videostreaming.PaintSurfaceView2;
 import easydarwin.android.videostreaming.VideoStreamingFragment;
 
 @SuppressLint("ClickableViewAccessibility")
@@ -557,7 +559,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		}
 	}	
 
-	/*** draw circle on surfaceView */
+	/*** draw circle on surfaceView accodring to the coordinate */
 	private void PAINTViewRoomMsgListener(XMPPConnection connection, String roomName) {
 
 		if(!connection.isConnected()) {
@@ -587,7 +589,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 							//Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
 							/** REDRAW CIRCLE according to the Coordinate*/ //(not test now)
 							thread.setBubble(Float.parseFloat(coordination[1]), Float.parseFloat(coordination[2]));
-							Log.i("REDRAW============", coordination[1]+","+coordination[2]);
+							Log.i("VideoPlayerActivity--REDRAW", coordination[1]+","+coordination[2]);
 						}else
 							Toast.makeText(getApplicationContext(),fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show(); 
 					}
@@ -1367,24 +1369,24 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //            return false;
 //        }
 
-//        DisplayMetrics screen = new DisplayMetrics();
-//        getWindowManager().getDefaultDisplay().getMetrics(screen);
+        DisplayMetrics screen = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(screen);
 //
-//        if (mSurfaceYDisplayRange == 0)
-//            mSurfaceYDisplayRange = Math.min(screen.widthPixels, screen.heightPixels);
-//
+        if (mSurfaceYDisplayRange == 0)
+            mSurfaceYDisplayRange = Math.min(screen.widthPixels, screen.heightPixels);
+
 //        float y_changed = event.getRawY() - mTouchY;
 //        float x_changed = event.getRawX() - mTouchX;
-//
-//        // coef is the gradient's move to determine a neutral zone
+
+        // coef is the gradient's move to determine a neutral zone
 //        float coef = Math.abs (y_changed / x_changed);
 //        float xgesturesize = ((x_changed / screen.xdpi) * 2.54f);
-//
-//        /* Offset for Mouse Events */
-//        int[] offset = new int[2];
-//        mSurface.getLocationOnScreen(offset);
-//        int xTouch = Math.round((event.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth());
-//        int yTouch = Math.round((event.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight());
+
+        /* Offset for Mouse Events */
+        int[] offset = new int[2];
+        mSurface.getLocationOnScreen(offset);
+        int xTouch = Math.round((event.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth());
+        int yTouch = Math.round((event.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight());
 
         float touchX = event.getX();
 		float touchY = event.getY();	
@@ -1402,12 +1404,13 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //    		mSurface.invalidate();
 //        	paintView.setVisibility(View.VISIBLE);
 //    		paintView.setFocusable(true);
-        	thread.setBubble(touchX, touchY);
+        	thread.setBubble(xTouch, yTouch);
 	        /** send message*/
-	        String coordinateMsg = "PaintView," + Float.toString(touchX) + "," + Float.toString(touchY);
+	        String coordinateMsg = "PaintView," + Float.toString(xTouch) + "," + Float.toString(yTouch);
 	        mRoom.SendMessage(connection, invitedRoom, coordinateMsg);
 	        
-        	Log.i("TOUCH++COORDINATE", Float.toString(touchX)+","+Float.toString(touchY));
+        	Log.i("TOUCH++COORDINATE--origin", Float.toString(touchX)+","+Float.toString(touchY));
+        	Log.i("TOUCH++COORDINATE--edit", Float.toString(xTouch)+","+Float.toString(yTouch));
 
  /*
             // Audio
@@ -1467,49 +1470,60 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //        return mTouchAction != TOUCH_NONE;
         return true;
     }
-	
-    class BubbleThread extends Thread {
-    	private boolean run = false;
-    	  private float bubbleX;
-    	  private float bubbleY;
-   	    
-    	  public BubbleThread(SurfaceHolder surfaceHolder) {
-    		  paintViewHolder = surfaceHolder;
-    	  }
-    	  
-    	  protected void setBubble(float x, float y) {
-    		 	bubbleX = x;
-    		   	bubbleY = y;
-    	  }
-    	  public void setRunning(boolean b) {
-  			run = b;
-  		}
-    	  public void run() {
-    		  while(run){
-    		      Canvas c = null;
-    		      try {//  draw the circle on screen
-    		        c = paintViewHolder.lockCanvas(null);
-    		        synchronized (paintViewHolder) {
-//    		        	c.restore();
-    		        	c.drawColor(Color.TRANSPARENT);
-    	    	    	c.drawCircle(bubbleX, bubbleY, 50, mPaint);
-    		        }
-    		        
-    		      } catch (IllegalArgumentException e) {
-                      e.printStackTrace();
-    		      }finally {
-    		        if (c != null) {
-    		        	paintViewHolder.unlockCanvasAndPost(c);
-    		        }
-    		      }	        
-    	  	}
-    	  }
-    	    
-    	}
-    
-    public BubbleThread getThread() {
-        return thread;
-      }
+
+	class BubbleThread extends Thread {
+		private boolean run = false;
+		private float bubbleX = -100;
+		private float bubbleY = -100;
+
+		public BubbleThread(SurfaceHolder surfaceHolder) {
+			paintViewHolder = surfaceHolder;
+		}
+
+		protected void setBubble(float x, float y) {
+			bubbleX = x;
+			bubbleY = y;
+		}
+
+		public void setRunning(boolean b) {
+			run = b;
+		}
+
+		public void run() {
+			while (run) {
+				Canvas c = null;
+				try {// draw the circle on screen
+					c = paintViewHolder.lockCanvas(null);
+					synchronized (paintViewHolder) {
+						// c.restore();
+						// clear old circle, test
+						mPaint.setXfermode(new PorterDuffXfermode(Mode.CLEAR));
+						c.drawPaint(mPaint);
+						mPaint.setXfermode(new PorterDuffXfermode(Mode.SRC));
+
+						// draw new circle
+						c.drawColor(Color.TRANSPARENT);
+						c.drawCircle(bubbleX, bubbleY, 50, mPaint);
+					}
+
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+				} finally {
+					if (c != null) {
+						paintViewHolder.unlockCanvasAndPost(c);
+					}
+				}
+
+			}
+			// circle disappear when other touch event happens
+			// paintView.invalidate();
+		}
+
+	}
+
+	public BubbleThread getThread() {
+		return thread;
+	}
 	
 //    private void doSeekTouch(float coef, float gesturesize, boolean seek) {
 //        // No seek action if coef > 0.5 and gesturesize < 1cm
@@ -1895,7 +1909,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
     		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            mPaint.setColor(Color.RED);
+            mPaint.setColor(Color.GREEN);
     		mPaint.setStyle(Style.STROKE);
     		
         	thread = new BubbleThread(holder);

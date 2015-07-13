@@ -17,14 +17,19 @@
         <net.majorkernelpanic.streaming.gl.SurfaceView
             android:id="@+id/surface"
             android:layout_width="fill_parent"
-            android:layout_height="400dp" 
-            android:clickable="true"/>
-		
+            android:layout_height="fill_parent" />
+<!--		
         <easydarwin.android.videostreaming.PaintView
             android:id="@+id/drawView"
             android:layout_width="match_parent"
             android:layout_height="400dp"
             />
+-->
+        <android.view.SurfaceView
+            android:id="@+id/drawView"
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent"
+            />        
         <TextView
             android:id="@+id/timeDisplay"
             android:layout_width="wrap_content"

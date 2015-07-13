@@ -67,6 +67,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Paint.Style;
+import android.graphics.PixelFormat;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -84,9 +91,11 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -104,9 +113,9 @@ import android.widget.Toast;
 public class VideoStreamingFragment extends Fragment implements Callback,
 		RtspClient.Callback, android.view.SurfaceHolder.Callback,
 		OnClickListener {
-	
+
 	private static final int REQUEST_SETTING = 1000;
-	// display current time 
+	// display current time
 	private static final int DISPLAY = 1;
 
 	private BroadcastReceiver mReceiver;
@@ -137,30 +146,34 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	private Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+)");
 	public static String username;
 	public static String password;
-	//private String entries;
+	// private String entries;
 	private List<Map<String, String>> friendList;
-	
+
 	public static XMPPConnection connection;
-	private String streaminglink="";
+	private String streaminglink = "";
 	private String streaminglinkTag = "rtsp://129.128.184.46:8554/";
 	private String curDateTime;
 
 	/** draw a circle when touch the screen */
-	private PaintView paintView;
-	 
-	private FragmentActivity faActivity;
+	// private PaintView paintView;
+	private Paint mPaint;
+	private BubbleThread thread;
 	
+	private android.view.SurfaceView paintView;
+	private SurfaceHolder paintViewHolder;
+	private FragmentActivity faActivity;
+
 	public static MultiRoom mRoom;
-	private String room = null; // "room3" 
+	private String room = null; // "room3"
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-		//get XMPPConnection if login success
+		super.onCreate(savedInstanceState);
+		// get XMPPConnection if login success
 		connection = LoginActivity.connection;
-		//check for after videoPlaying back to streamingFragment
-		if(!connection.isConnected()){
-			Log.i("0-SECOND-CREATEROOM_BUG","connection == null!");
+		// check for after videoPlaying back to streamingFragment
+		if (!connection.isConnected()) {
+			Log.i("0-SECOND-CREATEROOM_BUG", "connection == null!");
 			try {
 				connection.connect();
 			} catch (XMPPException e) {
@@ -168,99 +181,120 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			}
 		}
 	}
-	
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		faActivity = (FragmentActivity) super.getActivity();
-		
+
 		View v = inflater.inflate(R.layout.streaming_main, container, false);
 		// set provider
 		configureProviderManager(ProviderManager.getInstance());
-		faActivity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+		faActivity.getWindow().setFlags(
+				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
 				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		preferences = PreferenceManager.getDefaultSharedPreferences(faActivity);
 
 		initView(v);
 
-//		curDateTime = new SimpleDateFormat(
-//				"yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
-//		streaminglink = streaminglinkTag + getDefaultDeviceId()+ curDateTime + ".sdp";
+		// curDateTime = new SimpleDateFormat(
+		// "yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
+		// streaminglink = streaminglinkTag + getDefaultDeviceId()+ curDateTime
+		// + ".sdp";
 		streaminglink = "rtsp://129.128.184.46:8554/live.sdp";
-		
+
 		boolean bParamInvalid = (TextUtils.isEmpty(mAddress)
 				|| TextUtils.isEmpty(mPort) || TextUtils.isEmpty(mVideoName));
 		if (EasyCameraApp.sState != EasyCameraApp.STATE_DISCONNECTED) {
 			setStateDescription(EasyCameraApp.sState);
 		}
 		if (bParamInvalid) {
-			startActivityForResult(new Intent(faActivity, SettingsActivity.class),
-					REQUEST_SETTING);
+			startActivityForResult(new Intent(faActivity,
+					SettingsActivity.class), REQUEST_SETTING);
 		} else {
-//			streaminglink = String.format("rtsp://%s:%d/%s.sdp", mAddress,
-//					Integer.parseInt(mPort), mVideoName);
-//			ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress, Integer.parseInt(mPort), mVideoName));
-			
+			// streaminglink = String.format("rtsp://%s:%d/%s.sdp", mAddress,
+			// Integer.parseInt(mPort), mVideoName);
+			// ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
+			// Integer.parseInt(mPort), mVideoName));
+
 		}
 
-		/** TODO*/
+		/** TODO */
 		/** Invitation Listener */
-		InvitationListener(connection);	
+		InvitationListener(connection);
 		// send available after return from VideoPlayerActivity.java
 		Presence presence = new Presence(Presence.Type.available);
-	    connection.sendPacket(presence);
+		connection.sendPacket(presence);
 
 		btnSelectContact.setOnClickListener(this);
 		btnOption.setOnClickListener(this);
-//		btnStop.setOnClickListener(this);
+		// btnStop.setOnClickListener(this);
 		btnSendMessage.setOnClickListener(this);
 		// EditText: set android keyboard enter button as send button
-		textMessage.setOnEditorActionListener(new OnEditorActionListener() {	    
-		    @Override
-		    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-		    	mRoom.SendMessage(connection, room, textMessage.getText().toString());
-		    	textMessage.setText("");
-		    	return true;
-		    }
+		textMessage.setOnEditorActionListener(new OnEditorActionListener() {
+			@Override
+			public boolean onEditorAction(TextView v, int actionId,
+					KeyEvent event) {
+				mRoom.SendMessage(connection, room, textMessage.getText()
+						.toString());
+				textMessage.setText("");
+				return true;
+			}
 		});
-		
+
 		return v;
 	}
 
 	@SuppressWarnings("deprecation")
 	public void initView(View v) {
-		
+
 		mRoom = new MultiRoom(faActivity);
-		
+
 		mAddress = preferences.getString("key_server_address", null);
 		mPort = preferences.getString("key_server_port", null);
-		mVideoName = preferences.getString("key_device_id",null/*getDefaultDeviceId()*/);
+		mVideoName = preferences.getString("key_device_id", null/*
+																 * getDefaultDeviceId
+																 * ()
+																 */);
 		ipView = (TextView) v.findViewById(R.id.main_text_description);
 		mTime = (TextView) v.findViewById(R.id.timeDisplay);
-		// draw paint View
-		paintView = (PaintView)v.findViewById(R.id.drawView);		
-		
-		mSurfaceView = (net.majorkernelpanic.streaming.gl.SurfaceView) v.findViewById(R.id.surface);
+
+		mSurfaceView = (SurfaceView) v.findViewById(R.id.surface);
 		mSurfaceView.setAspectRatioMode(SurfaceView.ASPECT_RATIO_PREVIEW);
 		surfaceHolder = mSurfaceView.getHolder();
 		surfaceHolder.addCallback(this);
-		// needed for sdk < 11 
+		// needed for sdk < 11
 		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
+		// draw paint View
+		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		mPaint.setColor(Color.GREEN);
+		mPaint.setStyle(Style.STROKE);
+		
+		// paintView = (PaintView)v.findViewById(R.id.drawView);
+		paintView = (android.view.SurfaceView) v.findViewById(R.id.drawView);
+		paintViewHolder = paintView.getHolder();
+		paintView.setZOrderOnTop(true);
+//		paintView.setOnTouchListener(paintViewTouchListener);
+		//
+		paintViewHolder.setFormat(PixelFormat.TRANSPARENT);
+		paintViewHolder.addCallback(paintViewCallback);
+		
 		
 		btnSelectContact = (Button) v.findViewById(R.id.btnPlay);
 		btnOption = (Button) v.findViewById(R.id.btnOptions);
-//		btnStop = (Button) v.findViewById(R.id.btnStop);
+		// btnStop = (Button) v.findViewById(R.id.btnStop);
 
-		//get username & password for [VideoPlayerActivity] reconnect to the  XMPP server
+		// get username & password for [VideoPlayerActivity] reconnect to the
+		// XMPP server
 		username = faActivity.getIntent().getStringExtra("username");
 		password = faActivity.getIntent().getStringExtra("password");
-		// send message 
+		// send message
 		textMessage = (EditText) v.findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button) v.findViewById(R.id.btn_send_message);
-
 
 	}
 
@@ -270,23 +304,36 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		case R.id.btnPlay:
 			// get all the friends
 			friendList = getAllFriendsUser(connection);
-	
+
 			if (!alive) {
 				// popup ContactList and select to send invitation
-				popupContactList(/*entries*/);
+				popupContactList(/* entries */);
 
 			} else {
 				alive = false;
 				stopStream();
 				String msg = "Owner destroyed the room!";
-				//send disconnect connection notifiation
+				// send disconnect connection notifiation
 				mRoom.SendNotification(connection, room, msg);
 				// leave the chat room
 				mRoom.departChatRoom(connection, room);
-				
+
 				btnSelectContact.setBackgroundResource(R.drawable.play);
 				ipView.setText("");
-//				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,Integer.parseInt(mPort), mVideoName));
+				// ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
+				// mAddress,Integer.parseInt(mPort), mVideoName));
+				// stop Bubble Thread
+				boolean retry = true;
+				thread.setRunning(false);
+				while (retry) {
+					try {
+						thread.join();
+						Log.i("VideoStreamingFragment",
+								"draw status::"+ thread.isAlive());
+						retry = false;
+					} catch (InterruptedException e) {
+					}
+				}
 			}
 
 			break;
@@ -296,40 +343,40 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			startActivityForResult(intent, REQUEST_SETTING);
 
 			break;
-//		case R.id.btnStop:
-//			if (alive) {
-//				alive = false;
-//				stopStream();
-//				String msg = "Owner disconnected the connection!";
-//				mRoom.SendNotification(connection, room, msg);
-//				btnSelectContact.setBackgroundResource(R.drawable.play);
-//				ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
-//						Integer.parseInt(mPort), mVideoName));
-//				// off line
-//				mRoom.userOffline(connection);
-//			}
-//			faActivity.finish();
-//
-//			break;
+		// case R.id.btnStop:
+		// if (alive) {
+		// alive = false;
+		// stopStream();
+		// String msg = "Owner disconnected the connection!";
+		// mRoom.SendNotification(connection, room, msg);
+		// btnSelectContact.setBackgroundResource(R.drawable.play);
+		// ipView.setText(String.format("rtsp://%s:%d/%s.sdp", mAddress,
+		// Integer.parseInt(mPort), mVideoName));
+		// // off line
+		// mRoom.userOffline(connection);
+		// }
+		// faActivity.finish();
+		//
+		// break;
 		case R.id.btn_send_message:
-			mRoom.SendMessage(connection, room, textMessage.getText().toString());
+			mRoom.SendMessage(connection, room, textMessage.getText()
+					.toString());
 			textMessage.setText("");
 			break;
 		}
 	}
-
 
 	/**
 	 * start video streaming function
 	 */
 	private void PLAYVideoStreaming() {
 		preferences = PreferenceManager.getDefaultSharedPreferences(faActivity);
-		
-		/**draw a circle when user touch the screen*/
-		paintView.setVisibility(View.VISIBLE);
-		paintView.setFocusable(true);
-		paintView.setOnTouchListener(paintView);
-		
+
+		/** draw a circle when user touch the screen */
+		// paintView.setVisibility(View.VISIBLE);
+		// paintView.setFocusable(true);
+		paintView.setOnTouchListener(paintViewTouchListener);
+
 		new AsyncTask<Void, Void, Integer>() {
 			@Override
 			protected void onProgressUpdate(Void... values) {
@@ -344,8 +391,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			@Override
 			protected Integer doInBackground(Void... params) {
 
-				publishProgress();		
-				
+				publishProgress();
+
 				if (mSession == null) {// try to load video info directly...
 					boolean audioEnable = preferences.getBoolean(
 							"p_stream_audio", true);
@@ -396,10 +443,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 				mClient.setCredentials("", "");
 				mClient.setServerAddress(mAddress, Integer.parseInt(mPort));
-//				mClient.setStreamPath(String.format("/%s.sdp",preferences.getString("key_device_id", Build.MODEL)));
-				mClient.setStreamPath(String.format("/%s.sdp",mVideoName));
-				
-				/**IMPORTANT, start push stream.*/
+				// mClient.setStreamPath(String.format("/%s.sdp",preferences.getString("key_device_id",
+				// Build.MODEL)));
+				mClient.setStreamPath(String.format("/%s.sdp", mVideoName));
+
+				/** IMPORTANT, start push stream. */
 				mClient.startStream();
 				return 0;
 			}
@@ -407,66 +455,78 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}.execute();
 	}
 
-	
-	/**Invitation Listener */
-	public void InvitationListener(XMPPConnection connection){
+	/** Invitation Listener */
+	public void InvitationListener(XMPPConnection connection) {
 
-		//check for after videoPlaying back to streamingFragment
-		if(!connection.isConnected()){
-			Log.i("InvitationListener-SECOND-CREATEROOM_BUG","connection == null!");
+		// check for after videoPlaying back to streamingFragment
+		if (!connection.isConnected()) {
+			Log.i("InvitationListener-SECOND-CREATEROOM_BUG",
+					"connection == null!");
 			try {
 				connection.connect();
 			} catch (XMPPException e) {
 				e.printStackTrace();
 			}
 		}
-		
-		MultiUserChat.addInvitationListener(connection, new InvitationListener(){		
-			@Override
-			public void invitationReceived(Connection conn, String room,  
-                   String inviter, String reason, String password, Message message) {
-				
-				mRoom.setChatRoom(room.split("@")[0]); // userB.Room = userA.Room if userA.Room!=null
-				//accepted by default
-				MultiUserChat multiUserChat = new MultiUserChat(conn, room);    
-                try {  
-                    multiUserChat.join(conn.getUser()); 
-                    Log.i("INVITATION","invite to join success!");  
-                } catch (XMPPException e) {  
-                    e.printStackTrace();  
-                }  
-                final String inviterr = inviter;
-               // streaming link listener
-                multiUserChat.addMessageListener(new PacketListener() {  
-                    @Override  
-                    public void processPacket(Packet packet) {
-    					Message message = (Message) packet;
-    					if (message.getBody() != null) {
-    						Log.i("INVITATION-MULTI-ROOM RECEIVE MESSAGE:", "Text Recieved "
-    								+ message.getBody() + " from " + message.getFrom());
-    						final String msg = message.getBody().toString();
-    						mHandler.post(new Runnable() {
-    							@SuppressLint("NewApi")
-    							public void run() {
-    								// notification or chat...
-    								if (msg.contains(streaminglinkTag))	
-    									popupReceiveStreamingLinkMessage(inviterr, msg);
-    								else
-    									Toast.makeText(faActivity,/*"Invitation ELSE (not streaming link because didn't play streaming): " +*/ msg,
-    											Toast.LENGTH_SHORT).show();
-    							}
-    						});
-    						
-    					}
-    				}  
 
-                }); 
-			}			
-		});
+		MultiUserChat.addInvitationListener(connection,
+				new InvitationListener() {
+					@Override
+					public void invitationReceived(Connection conn,
+							String room, String inviter, String reason,
+							String password, Message message) {
+
+						mRoom.setChatRoom(room.split("@")[0]); // userB.Room =
+																// userA.Room if
+																// userA.Room!=null
+						// accepted by default
+						MultiUserChat multiUserChat = new MultiUserChat(conn,
+								room);
+						try {
+							multiUserChat.join(conn.getUser());
+							Log.i("INVITATION", "invite to join success!");
+						} catch (XMPPException e) {
+							e.printStackTrace();
+						}
+						final String inviterr = inviter;
+						// streaming link listener
+						multiUserChat.addMessageListener(new PacketListener() {
+							@Override
+							public void processPacket(Packet packet) {
+								Message message = (Message) packet;
+								if (message.getBody() != null) {
+									Log.i("INVITATION-MULTI-ROOM RECEIVE MESSAGE:",
+											"Text Recieved "
+													+ message.getBody()
+													+ " from "
+													+ message.getFrom());
+									final String msg = message.getBody()
+											.toString();
+									mHandler.post(new Runnable() {
+										@SuppressLint("NewApi")
+										public void run() {
+											// notification or chat...
+											if (msg.contains(streaminglinkTag))
+												popupReceiveStreamingLinkMessage(
+														inviterr, msg);
+											else
+												Toast.makeText(faActivity,/*
+																		 * "Invitation ELSE (not streaming link because didn't play streaming): "
+																		 * +
+																		 */msg,
+														Toast.LENGTH_SHORT)
+														.show();
+										}
+									});
+
+								}
+							}
+
+						});
+					}
+				});
 	}
-	
-	
-	
+
 	private void stopStream() {
 		if (mClient != null) {
 			mClient.release();
@@ -478,12 +538,12 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			mSession.release();
 			mSession = null;
 		}
-		
+
 		paintView.setVisibility(View.GONE);
 
 	}
 
-	/** Time Thread*/
+	/** Time Thread */
 	private class CurrentTimeThread extends Thread {
 		@Override
 		public void run() {
@@ -497,7 +557,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					e.printStackTrace();
 				}
 			} while (alive);
-			if(!alive){
+			if (!alive) {
 				android.os.Message msg = new android.os.Message();
 				msg.what = 2;
 				mHandler.sendMessage(msg);
@@ -506,14 +566,15 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		@SuppressLint({ "HandlerLeak", "SimpleDateFormat" })
 		private Handler mHandler = new Handler() {
-			
+
 			@Override
 			public void handleMessage(android.os.Message msg) {
 				super.handleMessage(msg);
 				switch (msg.what) {
 				case DISPLAY:
 					String curDateTime = new SimpleDateFormat(
-							"yyyy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime());
+							"yyyy-MM-dd HH:mm:ss").format(Calendar
+							.getInstance().getTime());
 					mTime.setText(curDateTime);
 					break;
 				case 2:
@@ -537,10 +598,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	// Select Fiends to Share the video
 	@SuppressWarnings("deprecation")
-	private void popupContactList(/*String entries*/) {
+	private void popupContactList(/* String entries */) {
 
-		final View v = faActivity.getLayoutInflater().inflate(R.layout.friendlist, null,
-				false);
+		final View v = faActivity.getLayoutInflater().inflate(
+				R.layout.friendlist, null, false);
 		int h = faActivity.getWindowManager().getDefaultDisplay().getHeight();
 		int w = faActivity.getWindowManager().getDefaultDisplay().getWidth();
 
@@ -559,7 +620,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		friendlistView = (ListView) v.findViewById(R.id.friendlist);
 		friendlistView.setItemsCanFocus(true);
 		friendsAdapter = new FriendsAdapter(faActivity, friendList);
-		
+
 		friendlistView.setAdapter(friendsAdapter);
 		friendlistView.setOnItemClickListener(new OnItemClickListener() {
 
@@ -584,13 +645,15 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		btn_Send = (Button) v.findViewById(R.id.btn_play);
 		btn_Send.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				curDateTime = new SimpleDateFormat(
-						"yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
+				curDateTime = new SimpleDateFormat("yyyy_MMdd_HHmmss")
+						.format(Calendar.getInstance().getTime());
 				room = "room" + curDateTime;
 				mRoom.setChatRoom(room);
-				Log.i("MULTIROOM-ROOM",room);
-				/**room message listening in back-end while video is playing */
-				mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());	
+				Log.i("MULTIROOM-ROOM", room);
+				/** room message listening in back-end while video is playing */
+				mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
+				/** draw circle on screen according the coordination */
+				PAINTViewRoomMsgListener(connection, mRoom.getChatRoom());
 				// START TO PUSH VIDEO
 				PLAYVideoStreaming();
 				Log.i("PLAY", "following should be streainglink====");
@@ -602,11 +665,13 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						Message msg = new Message(room + "@conference.myria",
 								Message.Type.groupchat);
 						msg.setBody(streaminglink);
-						if (!connection.isConnected()){
-							Log.i("1-SECOND-CREATEROOM_BUG","connection is dis-Connected");
+						if (!connection.isConnected()) {
+							Log.i("1-SECOND-CREATEROOM_BUG",
+									"connection is dis-Connected");
 							try {
 								connection.connect();
-								Presence presence = new Presence(Presence.Type.available);
+								Presence presence = new Presence(
+										Presence.Type.available);
 								connection.sendPacket(presence);
 							} catch (XMPPException e1) {
 								// TODO Auto-generated catch block
@@ -615,11 +680,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						}
 						connection.sendPacket(msg);
 					}
-				});			
+				});
 				// CREATE CHAT ROOM AND INVITE SELECTED FRIENDS TO JOIN
-				if(selectedListMap.size() > 0 ){	
-					if(!connection.isConnected()){
-						Log.i("2-SECOND-CREATEROOM_BUG","connection == null!");
+				if (selectedListMap.size() > 0) {
+					if (!connection.isConnected()) {
+						Log.i("2-SECOND-CREATEROOM_BUG", "connection == null!");
 						try {
 							connection.connect();
 						} catch (XMPPException e) {
@@ -627,10 +692,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						}
 					}
 					try {
-						if(mRoom.createMultiUserRoom(connection, room))
-							Log.i("CREATEROOM","success!");
-						if(mRoom.inviteToChatRoom(connection, room, selectedListMap))
-							Log.i("INVITEROOM","success!");
+						if (mRoom.createMultiUserRoom(connection, room))
+							Log.i("CREATEROOM", "success!");
+						if (mRoom.inviteToChatRoom(connection, room,
+								selectedListMap))
+							Log.i("INVITEROOM", "success!");
 					} catch (XMPPException e) {
 						e.printStackTrace();
 					}
@@ -646,12 +712,61 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		});
 	}
 
+	/*** draw circle on surfaceView accodring to the coordinate */
+	private void PAINTViewRoomMsgListener(XMPPConnection connection,
+			String roomName) {
+
+		if (!connection.isConnected()) {
+			try {
+				connection.connect();
+			} catch (XMPPException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		// Add a packet listener to get messages sent to us
+		MultiUserChat muc = new MultiUserChat(connection, roomName
+				+ "@conference.myria");
+		muc.addMessageListener(new PacketListener() {
+			@Override
+			public void processPacket(Packet packet) {
+				org.jivesoftware.smack.packet.Message message = (org.jivesoftware.smack.packet.Message) packet;
+				Log.i("PAINTViewRoomMsgListener ", message.getFrom() + ":"
+						+ message.getBody());
+				// room3@conference.myria/admin@myria/Smack-owner:dggjjk
+				final String[] fromName = message.getFrom().split("/");
+				final String msg = message.getBody().toString();
+				mHandler.post(new Runnable() {
+					@SuppressLint("NewApi")
+					public void run() {
+						// notification or chat...
+						if (msg.contains("PaintView")) {
+							String[] coordination = msg.split(",");
+							// Toast.makeText(getApplicationContext(),fromName[1]+
+							// ": (" + coordination[1]+","+coordination[2]+")",
+							// Toast.LENGTH_SHORT).show();
+							/** REDRAW CIRCLE according to the Coordinate */
+							// (not test now)
+							thread.setBubble(Float.parseFloat(coordination[1]),
+									Float.parseFloat(coordination[2]));
+							Log.i("VideoStreamingFragment-REDRAW",
+									coordination[1] + "," + coordination[2]);
+						} else
+							Toast.makeText(faActivity,
+									fromName[1] + ": " + msg,
+									Toast.LENGTH_SHORT).show();
+					}
+				});
+			}
+		});
+	}
+
 	// receive video streaming link listener
 	@SuppressWarnings("deprecation")
 	public void popupReceiveStreamingLinkMessage(String inviter, String message) {
 
-		final View v = faActivity.getLayoutInflater().inflate(R.layout.streaminglink,
-				null, false);
+		final View v = faActivity.getLayoutInflater().inflate(
+				R.layout.streaminglink, null, false);
 
 		int h = faActivity.getWindowManager().getDefaultDisplay().getHeight();
 		int w = faActivity.getWindowManager().getDefaultDisplay().getWidth();
@@ -667,27 +782,29 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			}
 		}, 1000L);
 
-		TextView stramingSender = (TextView) v.findViewById(R.id.streaming_sender);
-		stramingSender.setText("invitation from: "+inviter);
-		
+		TextView stramingSender = (TextView) v
+				.findViewById(R.id.streaming_sender);
+		stramingSender.setText("invitation from: " + inviter);
+
 		TextView stramingLink = (TextView) v.findViewById(R.id.streaming_link);
 		String[] subject = message.split("8554/");
-		stramingLink.setText("subject: "+subject[1]);
+		stramingLink.setText("subject: " + subject[1]);
 		btn_Send = (Button) v.findViewById(R.id.btn_play_streaming);
 		btn_Send.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				/** DO PLAYING */
-                /* Start this in a new thread as to not block the UI thread */
-                VLCCallbackTask task = new VLCCallbackTask(faActivity){
-                    @Override
-                    public void run() {
-                      AudioServiceController audioServiceController = AudioServiceController.getInstance();
-                      // use audio as default player...
-                      audioServiceController.load(streaminglink, false);
-                    }
-                };
-                task.execute();
-            
+				/* Start this in a new thread as to not block the UI thread */
+				VLCCallbackTask task = new VLCCallbackTask(faActivity) {
+					@Override
+					public void run() {
+						AudioServiceController audioServiceController = AudioServiceController
+								.getInstance();
+						// use audio as default player...
+						audioServiceController.load(streaminglink, false);
+					}
+				};
+				task.execute();
+
 				popStreamingLink.dismiss();
 			}
 		});
@@ -699,63 +816,65 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		});
 	}
 
-
 	// get all friends
-	private List<Map<String, String>> getAllFriendsUser(XMPPConnection connection){
-		if(!connection.isConnected()){
-			Log.i("SECOND_GETUSERS","connection=null");
+	private List<Map<String, String>> getAllFriendsUser(
+			XMPPConnection connection) {
+		if (!connection.isConnected()) {
+			Log.i("SECOND_GETUSERS", "connection=null");
 			try {
 				connection.connect();
 			} catch (XMPPException e) {
 				e.printStackTrace();
 			}
 		}
-		
+
 		friendList = new ArrayList<Map<String, String>>();
 		Roster roster11 = connection.getRoster();
 		Collection<RosterEntry> entries11 = roster11.getEntries();
-		
+
 		for (RosterEntry entry : entries11) {
-			Presence presence = roster11.getPresence(entry.getUser()); 
+			Presence presence = roster11.getPresence(entry.getUser());
 			Map<String, String> map = new HashMap<String, String>();
-			if(presence.isAvailable()){
+			if (presence.isAvailable()) {
 				map.put("status", "online");
-				Log.i("VideoStreaming",entry.getUser() + "--online");
-	        }else{
-	        	map.put("status", "offline");
-	        	Log.i("VideoStreaming",entry.getUser() + "--offline");
-	        }
+				Log.i("VideoStreaming", entry.getUser() + "--online");
+			} else {
+				map.put("status", "offline");
+				Log.i("VideoStreaming", entry.getUser() + "--offline");
+			}
 
 			map.put("name", entry.getName());
 			map.put("username", entry.getUser());
-			
+
 			friendList.add(map);
 		}
-		
+
 		return friendList;
 	}
 
 	@Override
 	public void onDestroy() {
-		super.onDestroy();	
+		super.onDestroy();
 		stopStream();
 		mRoom.userOffline(connection);
 	}
+
 	@Override
 	public void onPause() {
 		super.onPause();
 		stopStream();
 	}
-	
-	/**[solved problem]
-	 * connection disconnected problem, when back to streaming Fragment from VideoPlayer]
+
+	/**
+	 * [solved problem] connection disconnected problem, when back to streaming
+	 * Fragment from VideoPlayer]
 	 * */
 	@Override
 	public void onResume() {
 		super.onResume();
-		//check for after videoPlaying back to streamingFragment
-		if(!connection.isConnected()){
-			Log.i("0-SECOND-CREATEROOM_BUG","connection == null!");
+		// check for after videoPlaying back to streamingFragment
+		if (!connection.isConnected()) {
+			Log.i("0-SECOND-CREATEROOM_BUG", "connection == null!");
 			try {
 				connection.connect();
 			} catch (XMPPException e) {
@@ -768,15 +887,15 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		switch (state) {
 		case EasyCameraApp.STATE_DISCONNECTED:
-//			ipView.setText(null);
+			// ipView.setText(null);
 			break;
 		case EasyCameraApp.STATE_CONNECTED:
-//			ipView.setText(String.format(
-//					"Input this URL in VLC player:\nrtsp://%s:%d/%s.sdp",
-//					mAddress, mPort, mVideoName));
+			// ipView.setText(String.format(
+			// "Input this URL in VLC player:\nrtsp://%s:%d/%s.sdp",
+			// mAddress, mPort, mVideoName));
 			break;
 		case EasyCameraApp.STATE_CONNECTING:
-//			ipView.setText(null);
+			// ipView.setText(null);
 			break;
 		default:
 			break;
@@ -787,9 +906,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	public void onBitrareUpdate(long bitrate) {
 		if (mClient != null) {
 			if (bitrate / 1000 < 250)
-				ipView.setText(" The current network is not stable !  " + bitrate / 1000 +" kbps");
+				ipView.setText(" The current network is not stable !  "
+						+ bitrate / 1000 + " kbps");
 			if (bitrate / 1000 < 150)
-				// stop streaming 
+				// stop streaming
 				// destroy chat room
 				ipView.setText("Cannot streaming because of unstable network");
 		}
@@ -805,7 +925,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					btnSelectContact.setBackgroundResource(R.drawable.pause);
 					alive = true;
 					stopStream();
-//					ipView.setText("Disconnect with server，stop transfer");
+					// ipView.setText("Disconnect with server，stop transfer");
 
 				}
 			});
@@ -845,8 +965,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 							EasyCameraApp.STATE_DISCONNECTED);
 					// setStateDescription(state);
 					if (state == EasyCameraApp.STATE_CONNECTED) {
-//						ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
-//								mAddress, Integer.parseInt(mPort), mVideoName));
+						// ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
+						// mAddress, Integer.parseInt(mPort), mVideoName));
 					}
 
 				} else {
@@ -861,7 +981,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 							.equals(intent.getAction())) {
 						boolean success = false;
 						// get the network connection
-						ConnectivityManager connManager = (ConnectivityManager) faActivity.getSystemService(faActivity.CONNECTIVITY_SERVICE);
+						ConnectivityManager connManager = (ConnectivityManager) faActivity
+								.getSystemService(faActivity.CONNECTIVITY_SERVICE);
 						State state = connManager.getNetworkInfo(
 								ConnectivityManager.TYPE_WIFI).getState();
 						if (State.CONNECTED == state) {
@@ -875,9 +996,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						if (success) {
 							// startService(new Intent(MainActivity.this,
 							// CommandService.class));
-//							ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
-//									mAddress, Integer.parseInt(mPort),
-//									mVideoName));
+							// ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
+							// mAddress, Integer.parseInt(mPort),
+							// mVideoName));
 						}
 					}
 				}
@@ -885,7 +1006,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		};
 
-		ConnectivityManager cm = (ConnectivityManager) faActivity.getSystemService(faActivity.CONNECTIVITY_SERVICE);
+		ConnectivityManager cm = (ConnectivityManager) faActivity
+				.getSystemService(faActivity.CONNECTIVITY_SERVICE);
 		NetworkInfo info = cm.getActiveNetworkInfo();
 		if (info != null && info.isConnected()) {
 			SharedPreferences pref = PreferenceManager
@@ -910,7 +1032,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				// setStateDescription(EasyCameraApp.sState);
 			}
 		} else {
-//			ipView.setText("Network is unavailable,please open the network and try again");
+			// ipView.setText("Network is unavailable,please open the network and try again");
 		}
 
 	}
@@ -918,10 +1040,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	public String getDefaultDeviceId() {
 		return Build.MODEL.replaceAll(" ", "_");
 	}
-	
 
 	/**
 	 * Configure the provider manager
+	 * 
 	 * @param pm
 	 */
 	public void configureProviderManager(ProviderManager pm) {
@@ -1081,5 +1203,119 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			// nothing to do
 		}
 	}
-}
 
+
+
+	private final SurfaceHolder.Callback paintViewCallback = new android.view.SurfaceHolder.Callback() {
+		@Override
+		public void surfaceChanged(SurfaceHolder holder, int format, int width,
+				int height) {
+//			if(!thread.isAlive()){
+//				thread.start();
+//				Log.i("Bubble Thread","re--run");
+//			}
+		}
+
+		@Override
+		public void surfaceCreated(SurfaceHolder holder) {
+			thread = new BubbleThread(paintViewHolder);
+			thread.setRunning(true);
+			thread.start();
+		}
+
+		@Override
+		public void surfaceDestroyed(SurfaceHolder holder) {
+			boolean retry = true;
+			thread.setRunning(false);
+			while (retry) {
+				try {
+					thread.join();
+					Log.i("VideoStreamingFragment",
+							"draw status::"+ thread.isAlive());
+					retry = false;
+				} catch (InterruptedException e) {
+				}
+			}
+		}
+	};
+
+	class BubbleThread extends Thread {
+		private boolean run = false;
+		private float bubbleX = -100;
+		private float bubbleY = -100;
+
+		public BubbleThread(SurfaceHolder surfaceHolder) {
+			paintViewHolder = surfaceHolder;
+		}
+
+		protected void setBubble(float x, float y) {
+			bubbleX = x;
+			bubbleY = y;
+		}
+
+		public void setRunning(boolean b) {
+			run = b;
+		}
+
+		public void run() {
+			while (run) {
+				Canvas c = null;
+				try {// draw the circle on screen
+					c = paintViewHolder.lockCanvas(null);
+					synchronized (paintViewHolder) {
+						// c.restore();
+						// clear old circle, test
+						mPaint.setXfermode(new PorterDuffXfermode(Mode.CLEAR));
+						c.drawPaint(mPaint);
+						mPaint.setXfermode(new PorterDuffXfermode(Mode.SRC));
+
+						// draw new circle
+						c.drawColor(Color.TRANSPARENT);
+						c.drawCircle(bubbleX, bubbleY, 50, mPaint);
+					}
+
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+				} finally {
+					if (c != null) {
+						paintViewHolder.unlockCanvasAndPost(c);
+					}
+				}
+
+			}
+			// circle disappear when other touch event happens
+			// paintView.invalidate();
+		}
+
+	}
+
+	public BubbleThread getThread() {
+		return thread;
+	}
+	
+	private final OnTouchListener paintViewTouchListener = new OnTouchListener() {
+
+		@Override
+		public boolean onTouch(View v, MotionEvent e) {
+
+			float touchX = e.getX();
+			float touchY = e.getY();
+
+			switch (e.getAction()) {
+
+			case MotionEvent.ACTION_DOWN:
+				thread.setBubble(touchX, touchY);
+				/** send message */
+				String coordinateMsg = "PaintView,"
+						+ Float.toString(touchX) + ","
+						+ Float.toString(touchY);
+				mRoom.SendMessage(connection, room, coordinateMsg);
+
+				Log.i("VideoStreamingFragment", Float.toString(touchX)
+						+ "," + Float.toString(touchY));
+				break;
+			}
+			return true;
+		}
+	};
+}

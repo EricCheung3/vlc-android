@@ -22,6 +22,9 @@ import android.widget.Toast;
 
 public class MultiRoom {
 	
+	private final int PAINTVIEW = 2;
+	private final int MESSAGEVIEW = 3;
+	
 	private Activity context;
 
 	private String rooom;
@@ -151,12 +154,13 @@ public class MultiRoom {
 						String[] coordination = msg.split(",");
 						if (msg.equals("PaintView"))	{
 							android.os.Message handlerMsg = new android.os.Message();
-							handlerMsg.what = 2;
+
+							handlerMsg.what = PAINTVIEW;
 							handlerMsg.obj = fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")";
 							mHandler.sendMessage(handlerMsg);
 						}else{
 							android.os.Message handlerMsg = new android.os.Message();
-							handlerMsg.what = 3;
+							handlerMsg.what = MESSAGEVIEW;
 							handlerMsg.obj = fromName[1]+ ": " + msg;
 							mHandler.sendMessage(handlerMsg);
 						}
@@ -178,11 +182,16 @@ public class MultiRoom {
         		public void handleMessage(android.os.Message handlerMsg) {
         			super.handleMessage(handlerMsg);
         			switch (handlerMsg.what) {
-        			case 2:
+        			case PAINTVIEW:
         				Log.i("handlerMsg", handlerMsg.obj.toString() );
-        				Toast.makeText(context, handlerMsg.obj.toString(), Toast.LENGTH_SHORT).show();
+//        				Toast.makeText(context, handlerMsg.obj.toString(), Toast.LENGTH_SHORT).show();
+        				/** redraw circle on screen in here */
+        				/** NOTE: because Sender and Receiver use different technologies to draw circle,
+        				       (View and surfaceView respectively), the reason is that on Sender side,
+        				       if use surfaceView on the top of screen, no control button can be set over it.
+        				       so we can not do it in the same way. */
         				break;
-        			case 3:
+        			case MESSAGEVIEW:
         				Toast.makeText(context, handlerMsg.obj.toString(), Toast.LENGTH_SHORT).show();
         				break;
         			default:

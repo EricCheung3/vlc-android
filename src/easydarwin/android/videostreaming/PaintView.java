@@ -1,8 +1,11 @@
 package easydarwin.android.videostreaming;
 
+import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smackx.muc.MultiUserChat;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -10,11 +13,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.widget.Toast;
 
 @SuppressLint("ClickableViewAccessibility")
 public class PaintView extends View implements OnTouchListener {
@@ -24,7 +29,7 @@ public class PaintView extends View implements OnTouchListener {
 	private float mY;
 	/** touch message listener*/
 	private MultiRoom mRoom;
-	
+	private Handler mHandler = new Handler();
 	
 	public PaintView(Context context, AttributeSet attributeSet) {
 		super(context, attributeSet);
@@ -86,4 +91,45 @@ public class PaintView extends View implements OnTouchListener {
 		Log.i("PAINTVIEW-SENDMSG", msg.getBody());
 
 	}
+	
+	/*** draw circle on surfaceView */
+	private void PAINTViewRoomMsgListener(XMPPConnection connection, String roomName) {
+
+		if(!connection.isConnected()) {
+			try {
+				connection.connect();
+			} catch (XMPPException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		// Add a packet listener to get messages sent to us
+		MultiUserChat muc = new MultiUserChat(connection, roomName +"@conference.myria");
+		muc.addMessageListener(new PacketListener() {  
+            @Override  
+            public void processPacket(Packet packet) {  
+            	org.jivesoftware.smack.packet.Message message = (org.jivesoftware.smack.packet.Message) packet;
+                Log.i("PAINTViewRoomMsgListener ", message.getFrom() + ":" + message.getBody());
+                //room3@conference.myria/admin@myria/Smack-owner:dggjjk
+                final String[] fromName = message.getFrom().split("/");
+                final String msg = message.getBody().toString();
+                mHandler.post(new Runnable() {
+					@SuppressLint("NewApi")
+					public void run() {
+						// notification or chat...	
+						if(msg.contains("PaintView")){
+							String[] coordination = msg.split(",");
+							//Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
+							/** REDRAW CIRCLE according to the Coordinate*/ //(not test now)
+//							thread.setBubble(Float.parseFloat(coordination[1]), Float.parseFloat(coordination[2]));
+							
+							Log.i("REDRAW============", coordination[1]+","+coordination[2]);
+						}else{}
+							//Toast.makeText(getApplicationContext(),fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show(); 
+					}
+				}); 
+            }  
+        });  
+	}
+	
 }
