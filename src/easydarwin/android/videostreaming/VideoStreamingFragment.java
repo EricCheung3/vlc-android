@@ -278,8 +278,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		paintView = (android.view.SurfaceView) v.findViewById(R.id.drawView);
 		paintViewHolder = paintView.getHolder();
 		paintView.setZOrderOnTop(true);
-//		paintView.setOnTouchListener(paintViewTouchListener);
-		//
+
 		paintViewHolder.setFormat(PixelFormat.TRANSPARENT);
 		paintViewHolder.addCallback(paintViewCallback);
 		
@@ -306,10 +305,13 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			friendList = getAllFriendsUser(connection);
 
 			if (!alive) {
+				paintView.setVisibility(View.VISIBLE);
 				// popup ContactList and select to send invitation
 				popupContactList(/* entries */);
 
 			} else {
+				paintView.setVisibility(View.GONE);
+				
 				alive = false;
 				stopStream();
 				String msg = "Owner destroyed the room!";
@@ -322,20 +324,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				ipView.setText("");
 				// ipView.setText(String.format("rtsp://%s:%d/%s.sdp",
 				// mAddress,Integer.parseInt(mPort), mVideoName));
-				// stop Bubble Thread
-				boolean retry = true;
-				thread.setRunning(false);
-				while (retry) {
-					try {
-						thread.join();
-						Log.i("VideoStreamingFragment",
-								"draw status::"+ thread.isAlive());
-						retry = false;
-					} catch (InterruptedException e) {
-					}
-				}
-			}
 
+			}
 			break;
 		case R.id.btnOptions:
 			Intent intent = new Intent();
@@ -538,8 +528,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			mSession.release();
 			mSession = null;
 		}
-
-		paintView.setVisibility(View.GONE);
 
 	}
 
@@ -1210,10 +1198,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		@Override
 		public void surfaceChanged(SurfaceHolder holder, int format, int width,
 				int height) {
-//			if(!thread.isAlive()){
-//				thread.start();
-//				Log.i("Bubble Thread","re--run");
-//			}
+
 		}
 
 		@Override
@@ -1225,12 +1210,14 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		@Override
 		public void surfaceDestroyed(SurfaceHolder holder) {
+			Log.i("VideoStreamingFragment2",
+					"draw status::"+ thread.isAlive());
 			boolean retry = true;
 			thread.setRunning(false);
 			while (retry) {
 				try {
 					thread.join();
-					Log.i("VideoStreamingFragment",
+					Log.i("VideoStreamingFragment3",
 							"draw status::"+ thread.isAlive());
 					retry = false;
 				} catch (InterruptedException e) {
@@ -1264,7 +1251,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					c = paintViewHolder.lockCanvas(null);
 					synchronized (paintViewHolder) {
 						// c.restore();
-						// clear old circle, test
+						/**IMPORTANT: clear old circle */
 						mPaint.setXfermode(new PorterDuffXfermode(Mode.CLEAR));
 						c.drawPaint(mPaint);
 						mPaint.setXfermode(new PorterDuffXfermode(Mode.SRC));
@@ -1283,8 +1270,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				}
 
 			}
-			// circle disappear when other touch event happens
-			// paintView.invalidate();
 		}
 
 	}
