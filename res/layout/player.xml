@@ -23,14 +23,14 @@
 
             <SurfaceView
                 android:id="@+id/player_surface"
-                android:layout_width="match_parent"
-                android:layout_height="1dp" />
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent" />
        	<!-- PaintView draw a circle when touch screen  --> 
 
             <SurfaceView
                 android:id="@+id/drawView"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
 
             <SurfaceView
                 android:id="@+id/subtitles_surface"

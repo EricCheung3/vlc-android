@@ -157,7 +157,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	/** draw a circle when touch the screen */
 	// private PaintView paintView;
 	private Paint mPaint;
-	private BubbleThread thread;
+	private PaintThread paintThread;
 	
 	private android.view.SurfaceView paintView;
 	private SurfaceHolder paintViewHolder;
@@ -305,11 +305,13 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			friendList = getAllFriendsUser(connection);
 
 			if (!alive) {
+				//make paintView visable			
 				paintView.setVisibility(View.VISIBLE);
 				// popup ContactList and select to send invitation
 				popupContactList(/* entries */);
 
 			} else {
+				// make paintView disappear
 				paintView.setVisibility(View.GONE);
 				
 				alive = false;
@@ -734,11 +736,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 							// ": (" + coordination[1]+","+coordination[2]+")",
 							// Toast.LENGTH_SHORT).show();
 							/** REDRAW CIRCLE according to the Coordinate */
-							// (not test now)
-							thread.setBubble(Float.parseFloat(coordination[1]),
-									Float.parseFloat(coordination[2]));
-							Log.i("VideoStreamingFragment-REDRAW",
-									coordination[1] + "," + coordination[2]);
+							paintThread.setBubble(Float.parseFloat(coordination[1]),Float.parseFloat(coordination[2]));
+							Log.i("VideoStreamingFragment-REDRAW",coordination[1] + "," + coordination[2]);
 						} else
 							Toast.makeText(faActivity,
 									fromName[1] + ": " + msg,
@@ -1203,22 +1202,22 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		@Override
 		public void surfaceCreated(SurfaceHolder holder) {
-			thread = new BubbleThread(paintViewHolder);
-			thread.setRunning(true);
-			thread.start();
+			paintThread = new PaintThread(paintViewHolder);
+			paintThread.setRunning(true);
+			paintThread.start();
 		}
 
 		@Override
 		public void surfaceDestroyed(SurfaceHolder holder) {
 			Log.i("VideoStreamingFragment2",
-					"draw status::"+ thread.isAlive());
+					"draw status::"+ paintThread.isAlive());
 			boolean retry = true;
-			thread.setRunning(false);
+			paintThread.setRunning(false);
 			while (retry) {
 				try {
-					thread.join();
+					paintThread.join();
 					Log.i("VideoStreamingFragment3",
-							"draw status::"+ thread.isAlive());
+							"draw status::"+ paintThread.isAlive());
 					retry = false;
 				} catch (InterruptedException e) {
 				}
@@ -1226,12 +1225,12 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}
 	};
 
-	class BubbleThread extends Thread {
+	class PaintThread extends Thread {
 		private boolean run = false;
 		private float bubbleX = -100;
 		private float bubbleY = -100;
 
-		public BubbleThread(SurfaceHolder surfaceHolder) {
+		public PaintThread(SurfaceHolder surfaceHolder) {
 			paintViewHolder = surfaceHolder;
 		}
 
@@ -1274,8 +1273,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	}
 
-	public BubbleThread getThread() {
-		return thread;
+	public PaintThread getThread() {
+		return paintThread;
 	}
 	
 	private final OnTouchListener paintViewTouchListener = new OnTouchListener() {
@@ -1289,7 +1288,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			switch (e.getAction()) {
 
 			case MotionEvent.ACTION_DOWN:
-				thread.setBubble(touchX, touchY);
+				paintThread.setBubble(touchX, touchY);
 				/** send message */
 				String coordinateMsg = "PaintView,"
 						+ Float.toString(touchX) + ","

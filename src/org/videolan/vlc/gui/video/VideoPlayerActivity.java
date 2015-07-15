@@ -270,7 +270,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     
 	private Paint mPaint;
 	
-	private BubbleThread thread;
+	private PaintThread paintThread;
 	
 	/** room chat*/
 	private MultiRoom mRoom;
@@ -400,11 +400,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
                        
         }
         
+        /** Touch Event SurfaceView */
     	paintView = (SurfaceView) findViewById(R.id.drawView);	
     	paintViewHolder = paintView.getHolder();
     	paintView.setZOrderOnTop(true);
     	paintViewHolder.setFormat(PixelFormat.TRANSPARENT);
-
+    	/** draw a circle when users touch the screen */
     	if (mPresentation == null) {
     		paintViewHolder.addCallback(paintViewCallback);
                        
@@ -414,13 +415,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         /** TODO:
          * get XMPPConnection [need to reconnect to the server]
          * and add a PaintView for touch screen*/ 
-        // import: use sender[A]'s mRoom to keep room info same with player[B]
-
-		
+        // import: use sender[A]'s mRoom to keep room info same with player[B]	
         mRoom = VideoStreamingFragment.mRoom;
         // new thread to keep connection
 		new GetXMPPConnection().execute();
 
+		// Send message
 		textMessage = (EditText) findViewById(R.id.edit_say_something);
 		btnSendMessage = (Button)findViewById(R.id.btn_send_message);
 		// EditText: set android keyboard enter button as send button
@@ -442,12 +442,6 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 			}
 		});
 
-		/** draw a circle when users touch the screen */
-
-
-	
-
-		
 //        mSeekbar = (SeekBar) findViewById(R.id.player_overlay_seekbar);
 //        mSeekbar.setOnSeekBarChangeListener(mSeekListener);
 //
@@ -559,7 +553,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		}
 	}	
 
-	/*** draw circle on surfaceView accodring to the coordinate */
+	/*** draw circle on surfaceView according to the coordinate */
 	private void PAINTViewRoomMsgListener(XMPPConnection connection, String roomName) {
 
 		if(!connection.isConnected()) {
@@ -570,6 +564,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 				e.printStackTrace();
 			}
 		}
+		/** screen size Sender-->Receiver*/
+		
+		
 		// Add a packet listener to get messages sent to us
 		MultiUserChat muc = new MultiUserChat(connection, roomName +"@conference.myria");
 		muc.addMessageListener(new PacketListener() {  
@@ -588,8 +585,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 							String[] coordination = msg.split(",");
 							//Toast.makeText(getApplicationContext(),fromName[1]+ ": (" + coordination[1]+","+coordination[2]+")", Toast.LENGTH_SHORT).show();
 							/** REDRAW CIRCLE according to the Coordinate*/ //(not test now)
-							thread.setBubble(Float.parseFloat(coordination[1]), Float.parseFloat(coordination[2]));
-							Log.i("VideoPlayerActivity--REDRAW", coordination[1]+","+coordination[2]);
+							/**Bug3[solved 1] Sender-->Receiver
+							 * change the coordinate according to the video size and surface size!
+							 * */
+							paintThread.setBubble(Float.parseFloat(coordination[1])*mVideoWidth/mSurface.getWidth(), Float.parseFloat(coordination[2])*mVideoHeight/mSurface.getHeight());
+							Log.i("VideoPlayerActivity--REDRAW--video", (Float.parseFloat(coordination[1])*mVideoWidth/mSurface.getWidth())+","+coordination[2]);
+							Log.i("VideoPlayerActivity--REDRAW--surface", coordination[1]+","+coordination[2]);
 						}else
 							Toast.makeText(getApplicationContext(),fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show(); 
 					}
@@ -813,11 +814,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         context.startActivity(intent);
     }
 
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver()
-    {
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver(){
         @Override
-        public void onReceive(Context context, Intent intent)
-        {
+        public void onReceive(Context context, Intent intent){
 //            String action = intent.getAction();
 //            if (action.equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)) {
 //                int batteryLevel = intent.getIntExtra("level", 0);
@@ -1352,9 +1351,11 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     /**
      * show/hide the overlay
      */
-    //////HERE IS THE TOUCH EVENT///////////////////////////////
-    /***********************************88************/
-
+    /**HERE IS THE TOUCH EVENT */
+    /**
+     * shield all the event of original vlc,
+     * and touch interesting point on screen
+     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 //        if (mIsLocked) {
@@ -1369,11 +1370,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //            return false;
 //        }
 
-        DisplayMetrics screen = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(screen);
-//
-        if (mSurfaceYDisplayRange == 0)
-            mSurfaceYDisplayRange = Math.min(screen.widthPixels, screen.heightPixels);
+//        DisplayMetrics screen = new DisplayMetrics();
+//        getWindowManager().getDefaultDisplay().getMetrics(screen);
+//        if (mSurfaceYDisplayRange == 0)
+//            mSurfaceYDisplayRange = Math.min(screen.widthPixels, screen.heightPixels);
 
 //        float y_changed = event.getRawY() - mTouchY;
 //        float x_changed = event.getRawX() - mTouchX;
@@ -1382,35 +1382,30 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //        float coef = Math.abs (y_changed / x_changed);
 //        float xgesturesize = ((x_changed / screen.xdpi) * 2.54f);
 
+		/**Bug3[solved 2] Receiver-->Sender
+		 * change the coordinate according to the video size and surface size!
+		 * */
         /* Offset for Mouse Events */
         int[] offset = new int[2];
         mSurface.getLocationOnScreen(offset);
         int xTouch = Math.round((event.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth());
         int yTouch = Math.round((event.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight());
 
-        float touchX = event.getX();
-		float touchY = event.getY();	
-		
-		
+//      float touchX = event.getX();
+//		float touchY = event.getY();	
+
         switch (event.getAction()) {
 
         case MotionEvent.ACTION_DOWN:
-//			Canvas canvas = paintViewHolder.lockCanvas();
-//            canvas.drawColor(Color.TRANSPARENT);
-//            canvas.drawCircle(touchX, touchY, 50, mPaint);
-//            paintViewHolder.unlockCanvasAndPost(canvas);
-//
-//    		Log.i("TOUCH++COORDINATE", Float.toString(touchX));
-//    		mSurface.invalidate();
-//        	paintView.setVisibility(View.VISIBLE);
-//    		paintView.setFocusable(true);
-        	thread.setBubble(xTouch, yTouch);
+
+        	paintThread.setBubble(xTouch, yTouch);
 	        /** send message*/
-	        String coordinateMsg = "PaintView," + Float.toString(xTouch) + "," + Float.toString(yTouch);
+	        String coordinateMsg = "PaintView," + Float.toString(xTouch*mSurface.getWidth()/mVideoWidth) + "," 
+	        					+ Float.toString(yTouch*mSurface.getHeight()/mVideoHeight);
 	        mRoom.SendMessage(connection, invitedRoom, coordinateMsg);
 	        
-        	Log.i("TOUCH++COORDINATE--origin", Float.toString(touchX)+","+Float.toString(touchY));
-        	Log.i("TOUCH++COORDINATE--edit", Float.toString(xTouch)+","+Float.toString(yTouch));
+        	Log.i("TOUCH++COORDINATE--origin", Float.toString(xTouch)+","+Float.toString(yTouch));
+//        	Log.i("TOUCH++COORDINATE--edit", Float.toString(xTouch)+","+Float.toString(yTouch));
 
  /*
             // Audio
@@ -1471,12 +1466,13 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         return true;
     }
 
-	class BubbleThread extends Thread {
+    /** Draw point thread */
+	class PaintThread extends Thread {
 		private boolean run = false;
 		private float bubbleX = -100;
 		private float bubbleY = -100;
 
-		public BubbleThread(SurfaceHolder surfaceHolder) {
+		public PaintThread(SurfaceHolder surfaceHolder) {
 			paintViewHolder = surfaceHolder;
 		}
 
@@ -1496,7 +1492,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					c = paintViewHolder.lockCanvas(null);
 					synchronized (paintViewHolder) {
 						// c.restore();
-						// clear old circle, test
+						/**clear old circle */
 						mPaint.setXfermode(new PorterDuffXfermode(Mode.CLEAR));
 						c.drawPaint(mPaint);
 						mPaint.setXfermode(new PorterDuffXfermode(Mode.SRC));
@@ -1513,16 +1509,13 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 						paintViewHolder.unlockCanvasAndPost(c);
 					}
 				}
-
 			}
-			// circle disappear when other touch event happens
-			// paintView.invalidate();
 		}
 
 	}
 
-	public BubbleThread getThread() {
-		return thread;
+	public PaintThread getThread() {
+		return paintThread;
 	}
 	
 //    private void doSeekTouch(float coef, float gesturesize, boolean seek) {
@@ -1912,9 +1905,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             mPaint.setColor(Color.GREEN);
     		mPaint.setStyle(Style.STROKE);
     		
-        	thread = new BubbleThread(holder);
-        	thread.setRunning(true);
-            thread.start();
+        	paintThread = new PaintThread(holder);
+        	paintThread.setRunning(true);
+            paintThread.start();
         }
 
         @Override
@@ -1922,10 +1915,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         	if(mLibVLC != null)
                 mLibVLC.detachSubtitlesSurface();
         	 boolean retry = true;
-        	 thread.setRunning(false);
+        	 paintThread.setRunning(false);
              while (retry) {
                try {
-                 thread.join();
+                 paintThread.join();
                  retry = false;
                } catch (InterruptedException e) {
                }
