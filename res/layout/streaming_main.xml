@@ -10,14 +10,16 @@
     <RelativeLayout
         android:id="@+id/linear1"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="match_parent"
         android:background="@android:color/transparent"
         android:orientation="vertical" >
 
         <net.majorkernelpanic.streaming.gl.SurfaceView
             android:id="@+id/surface"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/linear2" />
+
 <!--		
         <easydarwin.android.videostreaming.PaintView
             android:id="@+id/drawView"
@@ -28,7 +30,7 @@
         <android.view.SurfaceView
             android:id="@+id/drawView"
             android:layout_width="match_parent"
-            android:layout_height="fill_parent"
+            android:layout_height="match_parent"
             />        
         <TextView
             android:id="@+id/timeDisplay"

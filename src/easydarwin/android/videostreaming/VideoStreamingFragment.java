@@ -200,12 +200,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		initView(v);
 
-		// curDateTime = new SimpleDateFormat(
-		// "yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
-		// streaminglink = streaminglinkTag + getDefaultDeviceId()+ curDateTime
-		// + ".sdp";
-		streaminglink = "rtsp://129.128.184.46:8554/live.sdp";
-
+//		curDateTime = new SimpleDateFormat("yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
+//		streaminglink = streaminglinkTag + getDefaultDeviceId()+ curDateTime + ".sdp";
+//		streaminglink = "rtsp://129.128.184.46:8554/live.sdp";
+		
+		 
 		boolean bParamInvalid = (TextUtils.isEmpty(mAddress)
 				|| TextUtils.isEmpty(mPort) || TextUtils.isEmpty(mVideoName));
 		if (EasyCameraApp.sState != EasyCameraApp.STATE_DISCONNECTED) {
@@ -361,12 +360,10 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	/**
 	 * start video streaming function
 	 */
-	private void PLAYVideoStreaming() {
+	private void PLAYVideoStreaming(final String linkname) {
 		preferences = PreferenceManager.getDefaultSharedPreferences(faActivity);
 
 		/** draw a circle when user touch the screen */
-		// paintView.setVisibility(View.VISIBLE);
-		// paintView.setFocusable(true);
 		paintView.setOnTouchListener(paintViewTouchListener);
 
 		new AsyncTask<Void, Void, Integer>() {
@@ -437,8 +434,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				mClient.setServerAddress(mAddress, Integer.parseInt(mPort));
 				// mClient.setStreamPath(String.format("/%s.sdp",preferences.getString("key_device_id",
 				// Build.MODEL)));
-				mClient.setStreamPath(String.format("/%s.sdp", mVideoName));
-
+				mClient.setStreamPath(String.format("/%s.sdp", linkname));
 				/** IMPORTANT, start push stream. */
 				mClient.startStream();
 				return 0;
@@ -637,6 +633,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			public void onClick(View view) {
 				curDateTime = new SimpleDateFormat("yyyy_MMdd_HHmmss")
 						.format(Calendar.getInstance().getTime());
+				streaminglink = streaminglinkTag + "room" + curDateTime + ".sdp";
+				Log.i("VideoStreaming--Streaminglink",streaminglink);
 				room = "room" + curDateTime;
 				mRoom.setChatRoom(room);
 				Log.i("MULTIROOM-ROOM", room);
@@ -645,7 +643,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 				/** draw circle on screen according the coordination */
 				PAINTViewRoomMsgListener(connection, mRoom.getChatRoom());
 				// START TO PUSH VIDEO
-				PLAYVideoStreaming();
+				PLAYVideoStreaming(room);
 				Log.i("PLAY", "following should be streainglink====");
 				if (popFriends != null)
 					popFriends.dismiss();
@@ -1192,7 +1190,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	}
 
 
-
+	/** Touch Event*/
 	private final SurfaceHolder.Callback paintViewCallback = new android.view.SurfaceHolder.Callback() {
 		@Override
 		public void surfaceChanged(SurfaceHolder holder, int format, int width,
@@ -1235,6 +1233,11 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}
 
 		protected void setBubble(float x, float y) {
+			//[Sender] --> [Receiver]
+			// because there's an 90 degree anti-clockwise rotation of the video,
+			// so switch x and y coordinate
+			// (x,y)-->(y,videoWidthX-x)
+			// do not revise at here, do it in Receiver send-message function
 			bubbleX = x;
 			bubbleY = y;
 		}

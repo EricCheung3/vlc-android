@@ -54,7 +54,6 @@ import org.videolan.libvlc.LibVlcUtil;
 import org.videolan.libvlc.Media;
 import org.videolan.vlc.MediaDatabase;
 import org.videolan.vlc.R;
-import org.videolan.vlc.VLCApplication;
 import org.videolan.vlc.audio.AudioServiceController;
 import org.videolan.vlc.gui.CommonDialogs;
 import org.videolan.vlc.gui.CommonDialogs.MenuType;
@@ -70,11 +69,9 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.KeyguardManager;
 import android.app.Presentation;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
@@ -99,8 +96,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.provider.Settings.SettingNotFoundException;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.KeyEvent;
@@ -163,8 +158,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //    private View mOverlayOption;
 //    private View mOverlayProgress;
 //    private View mOverlayBackground;
-    private static final int OVERLAY_TIMEOUT = 4000;
-    private static final int OVERLAY_INFINITE = 3600000;
+//    private static final int OVERLAY_TIMEOUT = 4000;
+//    private static final int OVERLAY_INFINITE = 3600000;
     private static final int FADE_OUT = 1;
     private static final int SHOW_PROGRESS = 2;
     private static final int SURFACE_SIZE = 3;
@@ -186,10 +181,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //    private ImageButton mPlayPause;
 //    private ImageButton mBackward;
 //    private ImageButton mForward;
-    private boolean mEnableJumpButtons;
-    private boolean mEnableBrightnessGesture;
+//    private boolean mEnableJumpButtons;
+//    private boolean mEnableBrightnessGesture;
     private boolean mEnableCloneMode;
-    private boolean mDisplayRemainingTime = false;
+//    private boolean mDisplayRemainingTime = false;
     private int mScreenOrientation;
 //    private ImageButton mAudioTrack;
 //    private ImageButton mSubtitle;
@@ -220,20 +215,20 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
     //Volume
     private AudioManager mAudioManager;
-    private int mAudioMax;
+//    private int mAudioMax;
     private OnAudioFocusChangeListener mAudioFocusListener;
 
     //Touch Events
-    private static final int TOUCH_NONE = 0;
-    private static final int TOUCH_VOLUME = 1;
-    private static final int TOUCH_BRIGHTNESS = 2;
-    private static final int TOUCH_SEEK = 3;
+//    private static final int TOUCH_NONE = 0;
+//    private static final int TOUCH_VOLUME = 1;
+//    private static final int TOUCH_BRIGHTNESS = 2;
+//    private static final int TOUCH_SEEK = 3;
 //    private int mTouchAction;
-    private int mSurfaceYDisplayRange;
-    private float mTouchY, mTouchX, mVol;
+//    private int mSurfaceYDisplayRange;
+//    private float mTouchY, mTouchX, mVol;
 
     // Brightness
-    private boolean mIsFirstBrightnessGesture = true;
+//    private boolean mIsFirstBrightnessGesture = true;
 
     // Tracks & Subtitles
     private Map<Integer,String> mAudioTracksList;
@@ -267,9 +262,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     //[ rewrite the SurfaceView like surface]
 	private SurfaceView paintView;
 	private SurfaceHolder paintViewHolder;
-    
 	private Paint mPaint;
-	
 	private PaintThread paintThread;
 	
 	/** room chat*/
@@ -301,7 +294,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         /* Services and miscellaneous */
         mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        mAudioMax = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+//        mAudioMax = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 
         mEnableCloneMode = mSettings.getBoolean("enable_clone_mode", false);
         createPresentation();
@@ -316,7 +309,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
                                 return;
                             setSurfaceSize(mVideoWidth, mVideoHeight, mVideoVisibleWidth, mVideoVisibleHeight, mSarNum, mSarDen);
                             if (visibility == View.SYSTEM_UI_FLAG_VISIBLE && !mShowing && !isFinishing()) {
-                                showOverlay();
+//                                showOverlay();
                             }
                             mUiVisibility = visibility;
                         }
@@ -343,11 +336,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         // the info textView is not on the overlay
 //        mInfo = (TextView) findViewById(R.id.player_overlay_info);
 
-        mEnableBrightnessGesture = mSettings.getBoolean("enable_brightness_gesture", true);
+//        mEnableBrightnessGesture = mSettings.getBoolean("enable_brightness_gesture", true);
+        /**control orientation of screen*/
         mScreenOrientation = Integer.valueOf(
                 mSettings.getString("screen_orientation_value", "4" /*SCREEN_ORIENTATION_SENSOR*/));
 
-        mEnableJumpButtons = mSettings.getBoolean("enable_jump_buttons", false);
+//        mEnableJumpButtons = mSettings.getBoolean("enable_jump_buttons", false);
 //        mPlayPause = (ImageButton) findViewById(R.id.player_overlay_play);
 //        mPlayPause.setOnClickListener(mPlayPauseListener);
 //        mBackward = (ImageButton) findViewById(R.id.player_overlay_backward);
@@ -463,10 +457,10 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         editor.putString(PreferencesActivity.VIDEO_SUBTITLE_FILES, null);
         editor.commit();
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        filter.addAction(VLCApplication.SLEEP_INTENT);
-        registerReceiver(mReceiver, filter);
+//        IntentFilter filter = new IntentFilter();
+//        filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+//        filter.addAction(VLCApplication.SLEEP_INTENT);
+//        registerReceiver(mReceiver, filter);
 
         Log.d(TAG,
                 "Hardware acceleration mode: "
@@ -564,8 +558,6 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 				e.printStackTrace();
 			}
 		}
-		/** screen size Sender-->Receiver*/
-		
 		
 		// Add a packet listener to get messages sent to us
 		MultiUserChat muc = new MultiUserChat(connection, roomName +"@conference.myria");
@@ -588,9 +580,16 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 							/**Bug3[solved 1] Sender-->Receiver
 							 * change the coordinate according to the video size and surface size!
 							 * */
-							paintThread.setBubble(Float.parseFloat(coordination[1])*mVideoWidth/mSurface.getWidth(), Float.parseFloat(coordination[2])*mVideoHeight/mSurface.getHeight());
+							// [Sender] --> [Receiver]
+							// there's an 90 degree anti-clockwise rotation of the video,
+							// so switch x and y coordinate
+							// (x,y)-->(y,videoWidthX-x)
+							paintThread.setBubble(Float.parseFloat(coordination[2])*mVideoHeight/mSurface.getHeight(), mVideoWidth - Float.parseFloat(coordination[1])*mVideoWidth/mSurface.getWidth());
 							Log.i("VideoPlayerActivity--REDRAW--video", (Float.parseFloat(coordination[1])*mVideoWidth/mSurface.getWidth())+","+coordination[2]);
-							Log.i("VideoPlayerActivity--REDRAW--surface", coordination[1]+","+coordination[2]);
+//							Log.i("VideoPlayerActivity--REDRAW--surface", coordination[1]+","+coordination[2]);
+							/**new test for landscape of screen 
+							paintThread.setBubble(Float.parseFloat(coordination[1]), Float.parseFloat(coordination[2]));
+							*/
 						}else
 							Toast.makeText(getApplicationContext(),fromName[1]+ ": " + msg, Toast.LENGTH_SHORT).show(); 
 					}
@@ -683,7 +682,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(mReceiver);
+//        unregisterReceiver(mReceiver);
 
         EventHandler em = EventHandler.getInstance();
         em.removeHandler(eventHandler);
@@ -814,9 +813,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         context.startActivity(intent);
     }
 
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver(){
-        @Override
-        public void onReceive(Context context, Intent intent){
+//    private final BroadcastReceiver mReceiver = new BroadcastReceiver(){
+//        @Override
+//        public void onReceive(Context context, Intent intent){
 //            String action = intent.getAction();
 //            if (action.equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)) {
 //                int batteryLevel = intent.getIntExtra("level", 0);
@@ -831,12 +830,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //            else if (action.equalsIgnoreCase(VLCApplication.SLEEP_INTENT)) {
 //                finish();
 //            }
-        }
-    };
+//        }
+//    };
 
     @Override
     public boolean onTrackballEvent(MotionEvent event) {
-        showOverlay();
+//        showOverlay();
         return true;
     }
 
@@ -936,16 +935,16 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
      * hide the info view with "delay" milliseconds delay
      * @param delay
      */
-    private void hideInfo(int delay) {
-        mHandler.sendEmptyMessageDelayed(FADE_OUT_INFO, delay);
-    }
+//    private void hideInfo(int delay) {
+//        mHandler.sendEmptyMessageDelayed(FADE_OUT_INFO, delay);
+//    }
 
     /**
      * hide the info view
      */
-    private void hideInfo() {
-        hideInfo(0);
-    }
+//    private void hideInfo() {
+//        hideInfo(0);
+//    }
 
 //    private void fadeOutInfo() {
 //        if (mInfo.getVisibility() == View.VISIBLE)
@@ -1032,7 +1031,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
                 case EventHandler.MediaPlayerPlaying:
                     Log.i(TAG, "MediaPlayerPlaying");
                     activity.stopLoadingAnimation();
-                    activity.showOverlay();
+//                    activity.showOverlay();
                     /** FIXME: update the track list when it changes during the
                      *  playback. (#7540) */
                     activity.setESTrackLists(true);
@@ -1386,26 +1385,37 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 		 * change the coordinate according to the video size and surface size!
 		 * */
         /* Offset for Mouse Events */
+    	/**right coordinate on screen, don't change it*/
         int[] offset = new int[2];
         mSurface.getLocationOnScreen(offset);
-        int xTouch = Math.round((event.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth());
-        int yTouch = Math.round((event.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight());
+        float xTouch = (event.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth();
+        float yTouch = (event.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight();
 
-//      float touchX = event.getX();
-//		float touchY = event.getY();	
 
         switch (event.getAction()) {
 
         case MotionEvent.ACTION_DOWN:
-
+        	// draw circle
         	paintThread.setBubble(xTouch, yTouch);
 	        /** send message*/
-	        String coordinateMsg = "PaintView," + Float.toString(xTouch*mSurface.getWidth()/mVideoWidth) + "," 
-	        					+ Float.toString(yTouch*mSurface.getHeight()/mVideoHeight);
-	        mRoom.SendMessage(connection, invitedRoom, coordinateMsg);
+	        // [Receiver] --> [Sender]
+	        // because there's an 90 degree [clockwise] rotation of the video,
+			// so switch x and y coordinate
+			// (x,y)-->(SurfaceWidthY-y,x)
+	        String coordinateMsgRotation = "PaintView," + Float.toString(mSurface.getHeight() - yTouch*mSurface.getHeight()/mVideoHeight) +","
+	        		+ Float.toString(xTouch*mSurface.getWidth()/mVideoWidth);
+	        mRoom.SendMessage(connection, invitedRoom, coordinateMsgRotation);
 	        
-        	Log.i("TOUCH++COORDINATE--origin", Float.toString(xTouch)+","+Float.toString(yTouch));
-//        	Log.i("TOUCH++COORDINATE--edit", Float.toString(xTouch)+","+Float.toString(yTouch));
+        	
+        	/**new test for landscape of screen 
+        	paintThread.setBubble(xTouch, yTouch);
+        	String XY = "PaintView," + Float.toString(xTouch)+","+ Float.toString(yTouch);
+//        	String XY1 = "PaintView," + Float.toString(xTouch*mSurface.getWidth()/mVideoWidth+offset[0])
+//        			+","+ Float.toString(yTouch*mSurface.getHeight()/mVideoHeight+offset[1]);
+        	mRoom.SendMessage(connection, invitedRoom, XY);
+        	*/
+        	
+            break;
 
  /*
             // Audio
@@ -1458,9 +1468,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             }
             // Seek
             doSeekTouch(coef, xgesturesize, true);
-            
- */
             break;
+ */
+
         }
 //        return mTouchAction != TOUCH_NONE;
         return true;
@@ -1499,7 +1509,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
 						// draw new circle
 						c.drawColor(Color.TRANSPARENT);
-						c.drawCircle(bubbleX, bubbleY, 50, mPaint);
+						c.drawCircle(bubbleX, bubbleY, 30, mPaint);
 					}
 
 				} catch (IllegalArgumentException e) {
@@ -1568,21 +1578,21 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //        }
 //    }
 
-    private void initBrightnessTouch() {
-        float brightnesstemp = 0.01f;
-        // Initialize the layoutParams screen brightness
-        try {
-            brightnesstemp = android.provider.Settings.System.getInt(getContentResolver(),
-                    android.provider.Settings.System.SCREEN_BRIGHTNESS) / 255.0f;
-        } catch (SettingNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        WindowManager.LayoutParams lp = getWindow().getAttributes();
-        lp.screenBrightness = brightnesstemp;
-        getWindow().setAttributes(lp);
-        mIsFirstBrightnessGesture = false;
-    }
+//    private void initBrightnessTouch() {
+//        float brightnesstemp = 0.01f;
+//        // Initialize the layoutParams screen brightness
+//        try {
+//            brightnesstemp = android.provider.Settings.System.getInt(getContentResolver(),
+//                    android.provider.Settings.System.SCREEN_BRIGHTNESS) / 255.0f;
+//        } catch (SettingNotFoundException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
+//        WindowManager.LayoutParams lp = getWindow().getAttributes();
+//        lp.screenBrightness = brightnesstemp;
+//        getWindow().setAttributes(lp);
+////        mIsFirstBrightnessGesture = false;
+//    }
 
 //    private void doBrightnessTouch(float y_changed) {
 //        if (mTouchAction != TOUCH_NONE && mTouchAction != TOUCH_BRIGHTNESS)
@@ -1775,7 +1785,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         long position = mLibVLC.getTime() + delta;
         if (position < 0) position = 0;
         mLibVLC.setTime(position);
-        showOverlay();
+//        showOverlay();
     }
 
     /**
@@ -1929,19 +1939,19 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     /**
      * show overlay the the default timeout
      */
-    private void showOverlay() {
+//    private void showOverlay() {
 //        showOverlay(OVERLAY_TIMEOUT);
-    }
+//    }
 
     /**
      * show overlay
      */
-    private void showOverlay(int timeout) {
-        if (mIsNavMenu)
-            return;
-        mHandler.sendEmptyMessage(SHOW_PROGRESS);
-        if (!mShowing) {
-            mShowing = true;
+//    private void showOverlay(int timeout) {
+//        if (mIsNavMenu)
+//            return;
+//        mHandler.sendEmptyMessage(SHOW_PROGRESS);
+//        if (!mShowing) {
+//            mShowing = true;
 //            if (!mIsLocked) {
 //                mOverlayHeader.setVisibility(View.VISIBLE);
 //                mOverlayOption.setVisibility(View.VISIBLE);
@@ -1951,14 +1961,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 //            }
 //            mOverlayProgress.setVisibility(View.VISIBLE);
 //            if (mPresentation != null) mOverlayBackground.setVisibility(View.VISIBLE);
-        }
-        Message msg = mHandler.obtainMessage(FADE_OUT);
-        if (timeout != 0) {
-            mHandler.removeMessages(FADE_OUT);
-            mHandler.sendMessageDelayed(msg, timeout);
-        }
-        updateOverlayPausePlay();
-    }
+//        }
+//        Message msg = mHandler.obtainMessage(FADE_OUT);
+//        if (timeout != 0) {
+//            mHandler.removeMessages(FADE_OUT);
+//            mHandler.sendMessageDelayed(msg, timeout);
+//        }
+//        updateOverlayPausePlay();
+//    }
 
 
     /**
@@ -2037,7 +2047,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         }
 
         // Update all view elements
-        boolean isSeekable = mEnableJumpButtons && length > 0;
+//        boolean isSeekable = mEnableJumpButtons && length > 0;
 //        mBackward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
 //        mForward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
 //        mSeekbar.setMax(length);
@@ -2244,7 +2254,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
             }
             else {
                 stopLoadingAnimation();
-                showOverlay();
+//                showOverlay();
             }
             updateNavStatus();
         } else if (savedIndexPosition > -1) {

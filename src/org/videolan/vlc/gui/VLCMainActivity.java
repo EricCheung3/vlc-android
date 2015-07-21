@@ -20,16 +20,19 @@
 
 package org.videolan.vlc.gui;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.videolan.libvlc.LibVlcException;
 import org.videolan.libvlc.LibVlcUtil;
 import org.videolan.vlc.MediaLibrary;
 import org.videolan.vlc.R;
 import org.videolan.vlc.VLCApplication;
-import org.videolan.vlc.VLCCallbackTask;
 import org.videolan.vlc.audio.AudioService;
 import org.videolan.vlc.audio.AudioServiceController;
 import org.videolan.vlc.gui.SidebarAdapter.SidebarEntry;
@@ -44,10 +47,8 @@ import org.videolan.vlc.util.WeakHandler;
 import org.videolan.vlc.widget.SlidingPaneLayout;
 
 import android.annotation.TargetApi;
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -55,6 +56,7 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -70,6 +72,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -79,10 +82,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.EditText;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import easydarwin.android.videostreaming.MultiRoom;
+import easydarwin.android.videostreaming.VideoStreamingFragment;
 
 public class VLCMainActivity extends ActionBarActivity {
     public final static String TAG = "VLC/MainActivity";
@@ -98,6 +104,10 @@ public class VLCMainActivity extends ActionBarActivity {
     private static final int ACTIVITY_RESULT_PREFERENCES = 1;
     private static final int ACTIVITY_SHOW_INFOLAYOUT = 2;
 	
+    private static final String serviceName = "conference.myria";
+    public  XMPPConnection connection;
+    
+    
     private ActionBar mActionBar;
     private SidebarAdapter mSidebarAdapter;
     private AudioPlayer mAudioPlayer;
@@ -600,9 +610,9 @@ public class VLCMainActivity extends ActionBarActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
 
         // Intent to start a new Activity
-        Intent intent;
+//        Intent intent;
         // Current fragment loaded
-        Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_placeholder);
+//        Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_placeholder);
 
         // Handle item selection
         switch (item.getItemId()) {
@@ -779,46 +789,126 @@ public class VLCMainActivity extends ActionBarActivity {
     }
 
     private void onOpenMRL() {
-        AlertDialog.Builder b = new AlertDialog.Builder(this);
-        final EditText input = new EditText(this);
-        //input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        input.setText("rtsp://218.204.223.237:554/live/1/66251FC11353191F/e7ooqwcfbqjoo80j.sdp");//rtsp://129.128.184.46:8554/live.sdp
-        b.setTitle(R.string.open_mrl_dialog_title);
-        b.setMessage(R.string.open_mrl_dialog_msg);
-        b.setView(input);
-        b.setPositiveButton(R.string.open, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int button) {
-
-                /* Start this in a new thread as to not block the UI thread */
-                VLCCallbackTask task = new VLCCallbackTask(VLCMainActivity.this)
-                {
-                    @Override
-                    public void run() {
-                      AudioServiceController c = AudioServiceController.getInstance();
-                      String s = input.getText().toString();
-
-                      /* Use the audio player by default. If a video track is
-                       * detected, then it will automatically switch to the video
-                       * player. This allows us to support more types of streams
-                       * (for example, RTSP and TS streaming) where ES can be
-                       * dynamically adapted rather than a simple scan.
-                       */
-                      c.load(s, false);
-                    }
-                };
-                task.execute();
-            }
-        }
-        );
-        b.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface arg0, int arg1) {
-                return;
-                }});
-        b.show();
+    	connection = VideoStreamingFragment.connection;
+		if (!connection.isConnected()) {
+			Log.i("2-SECOND-CREATEROOM_BUG", "connection == null!");
+			try {
+				connection.connect();
+			} catch (XMPPException e) {
+				e.printStackTrace();
+			}
+		}
+    	
+    	ArrayList<String> roomList = new ArrayList<String>();
+    	MultiRoom mRoom = VideoStreamingFragment.mRoom;
+    	
+    	try {
+    		roomList = mRoom.getChatRoomList(connection, serviceName);
+		} catch (XMPPException e) {
+			e.printStackTrace();
+		}
+//    	for (int i=0;i<roomList.size();i++){
+//    		Log.i("VLCMainActivity",roomList.get(i).toString());
+//    	}
+    	popupStreamingList(roomList);
+    		
+//    	
+//        AlertDialog.Builder b = new AlertDialog.Builder(this);
+//        final EditText input = new EditText(this);
+//        //input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+//        input.setText("rtsp://218.204.223.237:554/live/1/66251FC11353191F/e7ooqwcfbqjoo80j.sdp");//rtsp://129.128.184.46:8554/live.sdp
+//        b.setTitle(R.string.open_mrl_dialog_title);
+//        b.setMessage(R.string.open_mrl_dialog_msg);
+//        b.setView(input);
+//        b.setPositiveButton(R.string.open, new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int button) {
+//
+//                /* Start this in a new thread as to not block the UI thread */
+//                VLCCallbackTask task = new VLCCallbackTask(VLCMainActivity.this)
+//                {
+//                    @Override
+//                    public void run() {
+//                      AudioServiceController c = AudioServiceController.getInstance();
+//                      String s = input.getText().toString();
+//
+//                      /* Use the audio player by default. If a video track is
+//                       * detected, then it will automatically switch to the video
+//                       * player. This allows us to support more types of streams
+//                       * (for example, RTSP and TS streaming) where ES can be
+//                       * dynamically adapted rather than a simple scan.
+//                       */
+//                      c.load(s, false);
+//                    }
+//                };
+//                task.execute();
+//            }
+//        }
+//        );
+//        b.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface arg0, int arg1) {
+//                return;
+//                }});
+//        b.show();
     }
 
+    private PopupWindow popRoomList;
+
+	private void popupStreamingList(final ArrayList<String> roomList) {
+
+		final View v = getLayoutInflater().inflate(
+				R.layout.streamingroom_list, null, false);
+		int h = getWindowManager().getDefaultDisplay().getHeight();
+		int w = getWindowManager().getDefaultDisplay().getWidth();
+
+		popRoomList = new PopupWindow(v, w - 10, (int) (((2.8) * h) / 4));
+		popRoomList.setAnimationStyle(R.style.MyDialogStyleBottom);
+		popRoomList.setFocusable(true);
+		popRoomList.setBackgroundDrawable(new BitmapDrawable());
+		new Handler().postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				popRoomList.showAtLocation(v, Gravity.BOTTOM, 0, 0);
+			}
+		}, 500L);
+		
+		ArrayAdapter<String> roomAdapter = new ArrayAdapter<String>(this,
+	              android.R.layout.simple_list_item_1, android.R.id.text1, roomList);
+		ListView roomlistView = (ListView) v.findViewById(R.id.roomlist);
+		roomlistView.setItemsCanFocus(true);
+		roomlistView.setAdapter(roomAdapter);
+		roomlistView.setOnItemClickListener(new OnItemClickListener(){
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View v, int position,
+					long id) {
+				// TODO Auto-generated method stub
+				/** rejoin the chat Room*/
+				MultiUserChat muc = new MultiUserChat(connection, roomList.get(position)+ "@"+serviceName);
+				try {
+					muc.join(connection.getUser());
+					Log.i("VLCMainActivity--rejoin user",connection.getUser());
+				} catch (XMPPException e) {
+					e.printStackTrace();
+				}
+				
+				
+				/** request video streaming*/
+				AudioServiceController audioServiceController = AudioServiceController
+						.getInstance();
+				// use audio as default player...
+				String streaminglink = "rtsp://129.128.184.46:8554/" + roomList.get(position) +".sdp";
+				Log.i("VLCMainActivity--request streaminglink", streaminglink);
+				audioServiceController.load(streaminglink, false);
+				
+				popRoomList.dismiss();
+			}
+
+		});
+	}
+	
+	
     /**
      * Show the audio player.
      */

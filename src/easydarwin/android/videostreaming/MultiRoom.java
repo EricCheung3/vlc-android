@@ -1,6 +1,7 @@
 package easydarwin.android.videostreaming;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.jivesoftware.smack.PacketListener;
@@ -10,6 +11,7 @@ import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.Form;
+import org.jivesoftware.smackx.muc.HostedRoom;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 
 import android.annotation.SuppressLint;
@@ -17,7 +19,6 @@ import android.app.Activity;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.widget.EditText;
 import android.widget.Toast;
 
 public class MultiRoom {
@@ -100,6 +101,35 @@ public class MultiRoom {
 		else
 			return false;
 	}
+	
+	/** Get Existing rooms, and rejoin it
+	 * @throws XMPPException */
+	public ArrayList<String> getChatRoomList(XMPPConnection connection, String serviceName) throws XMPPException {
+		
+		if(connection!=null){
+
+			// Group Chat Rooms in the service "conference.myria"
+			Collection<HostedRoom>  rooms = MultiUserChat.getHostedRooms(connection, serviceName);
+			Log.i("ROOMLIST",Integer.toString(rooms.size()));
+			ArrayList<String> roomList = new ArrayList<String>();
+			for(HostedRoom room : rooms) {
+				// room.getName()+"@conference.myria" == room.getJid();
+//				MultiUserChat muc = new MultiUserChat(connection, room.getJid());
+//				Collection<Affiliate> owners = muc.getOwners();
+//				for (Affiliate owner:owners){
+//					Log.i("ROOMLIST-OWNER",owner.toString()); 
+//					Log.i("ROOMLIST-OWNER",owner.getRole()); 
+//				}
+				roomList.add(room.getName());
+            }     
+			Log.i("ROOMLIST",roomList.toString()); 
+			return roomList;
+		}else
+			return null;
+
+		
+	}
+	
 	
 	/** Invite users to a chat room
 	 * @throws XMPPException */
