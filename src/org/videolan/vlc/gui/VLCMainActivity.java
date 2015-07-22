@@ -56,6 +56,7 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -807,10 +808,8 @@ public class VLCMainActivity extends ActionBarActivity {
 		} catch (XMPPException e) {
 			e.printStackTrace();
 		}
-//    	for (int i=0;i<roomList.size();i++){
-//    		Log.i("VLCMainActivity",roomList.get(i).toString());
-//    	}
-    	popupStreamingList(roomList);
+
+    	popupStreamingList(mRoom,roomList);
     		
 //    	
 //        AlertDialog.Builder b = new AlertDialog.Builder(this);
@@ -855,7 +854,7 @@ public class VLCMainActivity extends ActionBarActivity {
 
     private PopupWindow popRoomList;
 
-	private void popupStreamingList(final ArrayList<String> roomList) {
+	private void popupStreamingList(final MultiRoom mRoom,final ArrayList<String> roomList) {
 
 		final View v = getLayoutInflater().inflate(
 				R.layout.streamingroom_list, null, false);
@@ -874,9 +873,10 @@ public class VLCMainActivity extends ActionBarActivity {
 		}, 500L);
 		
 		ArrayAdapter<String> roomAdapter = new ArrayAdapter<String>(this,
-	              android.R.layout.simple_list_item_1, android.R.id.text1, roomList);
+	              R.layout.streamingroom_list_background, R.id.text1, roomList);
 		ListView roomlistView = (ListView) v.findViewById(R.id.roomlist);
 		roomlistView.setItemsCanFocus(true);
+//		roomlistView.setCacheColorHint(Color.TRANSPARENT);
 		roomlistView.setAdapter(roomAdapter);
 		roomlistView.setOnItemClickListener(new OnItemClickListener(){
 
@@ -893,6 +893,11 @@ public class VLCMainActivity extends ActionBarActivity {
 					e.printStackTrace();
 				}
 				
+				// set new chat room
+				if(mRoom.getChatRoom()==null){
+					mRoom.setChatRoom(roomList.get(position));
+					Log.i("VLCMainActivity--get room","null");
+				}
 				
 				/** request video streaming*/
 				AudioServiceController audioServiceController = AudioServiceController

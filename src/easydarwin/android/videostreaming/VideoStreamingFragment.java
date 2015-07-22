@@ -773,6 +773,8 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 		TextView stramingLink = (TextView) v.findViewById(R.id.streaming_link);
 		String[] subject = message.split("8554/");
+		final String receiveStreaming = message.toString();
+		Log.i("VideoStreamingFragment","receiveStreaming:"+ receiveStreaming);
 		stramingLink.setText("subject: " + subject[1]);
 		btn_Send = (Button) v.findViewById(R.id.btn_play_streaming);
 		btn_Send.setOnClickListener(new View.OnClickListener() {
@@ -785,7 +787,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						AudioServiceController audioServiceController = AudioServiceController
 								.getInstance();
 						// use audio as default player...
-						audioServiceController.load(streaminglink, false);
+						audioServiceController.load(receiveStreaming, false);
 					}
 				};
 				task.execute();
