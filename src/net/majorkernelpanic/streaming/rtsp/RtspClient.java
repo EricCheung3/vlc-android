@@ -344,13 +344,13 @@ public class RtspClient {
 		mHandler.post(new Runnable() {
 			@Override
 			public void run() {
-				if (mParameters != null && mParameters.session != null) {
-					mParameters.session.stop();
-				}
-				if (mState != STATE_STOPPED) {
-					mState = STATE_STOPPING;
-					abord();
-				}
+//				if (mParameters != null && mParameters.session != null) {
+//					mParameters.session.stop();
+//				}
+//				if (mState != STATE_STOPPED) {
+//					mState = STATE_STOPPING;
+//					abord();
+//				}
 				if (mRtpThread != null) {
 					mRtpThread.destroy();
 					mRtpThread = null;

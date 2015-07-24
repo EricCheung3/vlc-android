@@ -33,7 +33,9 @@ import java.io.StreamCorruptedException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URLDecoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Locale;
 import java.util.Map;
 
@@ -1395,6 +1397,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         switch (event.getAction()) {
 
         case MotionEvent.ACTION_DOWN:
+        	
+        	String timestamp = new SimpleDateFormat("yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
         	// draw circle
         	paintThread.setBubble(xTouch, yTouch);
 	        /** send message*/
@@ -1406,7 +1410,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 	        		+ Float.toString(xTouch*mSurface.getWidth()/mVideoWidth);
 	        mRoom.SendMessage(connection, invitedRoom, coordinateMsgRotation);
 	        
-        	
+	        String coordinate = Float.toString(xTouch) + ","
+					+ Float.toString(yTouch);
+	        
+	        /** store these data
+	        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
+	        */// add some annotation
+	        mRoom.touchAnnotation(connection, invitedRoom, timestamp, coordinate);
+
         	/**new test for landscape of screen 
         	paintThread.setBubble(xTouch, yTouch);
         	String XY = "PaintView," + Float.toString(xTouch)+","+ Float.toString(yTouch);

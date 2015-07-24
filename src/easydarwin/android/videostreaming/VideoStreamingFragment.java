@@ -60,10 +60,13 @@ import org.jivesoftware.smackx.search.UserSearch;
 import org.videolan.vlc.R;
 import org.videolan.vlc.VLCCallbackTask;
 import org.videolan.vlc.audio.AudioServiceController;
+import org.videolan.vlc.gui.VLCMainActivity;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -498,10 +501,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 												popupReceiveStreamingLinkMessage(
 														inviterr, msg);
 											else
-												Toast.makeText(faActivity,/*
-																		 * "Invitation ELSE (not streaming link because didn't play streaming): "
-																		 * +
-																		 */msg,
+												Toast.makeText(faActivity,msg,
 														Toast.LENGTH_SHORT)
 														.show();
 										}
@@ -1220,6 +1220,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 							"draw status::"+ paintThread.isAlive());
 					retry = false;
 				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
 		}
@@ -1293,6 +1294,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			switch (e.getAction()) {
 
 			case MotionEvent.ACTION_DOWN:
+				
+				String timestamp = new SimpleDateFormat("yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
+				
 				paintThread.setBubble(touchX, touchY);
 				/** send message */
 				String coordinateMsg = "PaintView,"
@@ -1300,6 +1304,14 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						+ Float.toString(touchY);
 				mRoom.SendMessage(connection, room, coordinateMsg);
 
+				String coordinate = Float.toString(touchX) + ","
+						+ Float.toString(touchY);
+				
+		        /** store these data
+		        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
+		        */// tag some annotation
+				mRoom.touchAnnotation(connection, room, timestamp, coordinate);
+				
 				Log.i("VideoStreamingFragment", Float.toString(touchX)
 						+ "," + Float.toString(touchY));
 				break;
@@ -1307,4 +1319,5 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			return true;
 		}
 	};
+
 }

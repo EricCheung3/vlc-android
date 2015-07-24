@@ -327,6 +327,7 @@ public class RtpSocket implements Runnable {
 	}
 
 	/** The Thread sends the packets in the FIFO one by one at a constant rate. */
+	//FIXME:  throws the exception: current thread is interruptedtryAcquire throws InterruptedException.
 	@Override
 	public void run() {
 		Statistics stats = new Statistics(50, 3000);

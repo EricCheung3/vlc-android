@@ -30,7 +30,9 @@
     <string name="custom_notification">I\'m a custom notification.</string>
     
     
-        
+    <string name="TAG_title">Add some annotation</string>
+    <string name="TAG_message">Enter some tags or annotations, like dog, flower, buildings.</string>
+    <string name="TAG_send">Send</string>
 
     <!-- Strings related to Settings -->
 	<string name="title_activity_settings">setting</string>

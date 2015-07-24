@@ -2,6 +2,7 @@ package easydarwin.android.videostreaming;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import org.jivesoftware.smack.PacketListener;
@@ -10,21 +11,30 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.util.StringUtils;
 import org.jivesoftware.smackx.Form;
 import org.jivesoftware.smackx.muc.HostedRoom;
 import org.jivesoftware.smackx.muc.MultiUserChat;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.videolan.vlc.R;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.EditText;
 import android.widget.Toast;
 
 public class MultiRoom {
 	
 	private final int PAINTVIEW = 2;
 	private final int MESSAGEVIEW = 3;
+	
+	private static final String serviceName = "conference.myria";
 	
 	private Activity context;
 
@@ -58,7 +68,7 @@ public class MultiRoom {
 		}
 		// Get the MultiUserChatManager
 		// Create a MultiUserChat using an XMPPConnection for a room
-		MultiUserChat muc = new MultiUserChat(connection, roomName + "@conference.myria"); 
+		MultiUserChat muc = new MultiUserChat(connection, roomName + "@"+serviceName); 
 
 		// Create the room
 		muc.create(roomName);
@@ -92,7 +102,7 @@ public class MultiRoom {
 			// Get the MultiUserChatManager
 			// Create a MultiUserChat using an XMPPConnection for a room
 			MultiUserChat muc = new MultiUserChat(connection, roomName
-					+ "@conference.myria");
+					+ "@"+serviceName);
 			muc.join(connection.getUser());
 			Log.i("JOIN-USER-NAME",connection.getUser());
 
@@ -103,6 +113,9 @@ public class MultiRoom {
 	}
 	
 	/** Get Existing rooms, and rejoin it
+	 * FIXME: you can only join the room that you are allowed.
+	 * 		solution1: when rejoin, send message to owner, and owner make a decision
+	 *      solution2: create chat room with password and give it to friends
 	 * @throws XMPPException */
 	public ArrayList<String> getChatRoomList(XMPPConnection connection, String serviceName) throws XMPPException {
 		
@@ -114,7 +127,19 @@ public class MultiRoom {
 			ArrayList<String> roomList = new ArrayList<String>();
 			for(HostedRoom room : rooms) {
 				// room.getName()+"@conference.myria" == room.getJid();
-//				MultiUserChat muc = new MultiUserChat(connection, room.getJid());
+				MultiUserChat muc = new MultiUserChat(connection, room.getJid());
+				
+				Iterator <String> sss = muc.getOccupants();
+				Log.i("ROOMLIST-OccupantsCount",Integer.toString(muc.getOccupantsCount())); 
+				Log.i("ROOMLIST-Occupants",sss.toString()); 
+				
+				ArrayList<String> listUser = new ArrayList<String>();
+				while (sss.hasNext()) {
+			        String name = StringUtils.parseResource(sss.next());
+			        listUser.add(name);
+			        Log.e("ROOMLIST-------", "" + name);
+			    }
+				
 //				Collection<Affiliate> owners = muc.getOwners();
 //				for (Affiliate owner:owners){
 //					Log.i("ROOMLIST-OWNER",owner.toString()); 
@@ -137,7 +162,7 @@ public class MultiRoom {
 
 		if(connection != null){
 			MultiUserChat muc = new MultiUserChat(connection, roomName
-					+ "@conference.myria");
+					+ "@"+serviceName);
 			muc.join(connection.getUser()+"-owner");
 
 			// invite another users
@@ -165,7 +190,7 @@ public class MultiRoom {
 			}
 		}
 		// Add a packet listener to get messages sent to us
-		MultiUserChat muc = new MultiUserChat(connection, roomName +"@conference.myria");
+		MultiUserChat muc = new MultiUserChat(connection, roomName +"@"+serviceName);
 		muc.addMessageListener(new PacketListener() {  
             @Override  
             public void processPacket(Packet packet) {  
@@ -182,7 +207,7 @@ public class MultiRoom {
 						 *  use handler to process it: display message
 						 */
 						String[] coordination = msg.split(",");
-						if (msg.equals("PaintView"))	{
+						if (msg.contains("PaintView"))	{
 							android.os.Message handlerMsg = new android.os.Message();
 
 							handlerMsg.what = PAINTVIEW;
@@ -232,6 +257,72 @@ public class MultiRoom {
         });  
 	}
 	
+
+	/** Add touch annotation*/
+	public void touchAnnotation(final XMPPConnection connection, final String room, final String timestamp, final String coordinate){
+		AlertDialog.Builder tagDialog = new AlertDialog.Builder(context);
+		final EditText input = new EditText(context);
+
+		input.setHint("tag some annotation...");
+		tagDialog.setTitle(R.string.TAG_title).setView(input);
+		
+		tagDialog.setPositiveButton(R.string.TAG_send,
+			new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int button) {
+
+					final String tag = input.getText().toString();
+					SendMessage(connection, room, tag);
+					
+					/** store these data
+			        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
+			        */
+					// store the touch event data
+					android.os.Message msg = new android.os.Message();
+					msg.what = 123;
+					JSONObject dataObject = new JSONObject();
+					try {
+						dataObject.put("user", connection.getUser());
+						dataObject.put("timestamp", timestamp);
+						dataObject.put("coordinate", coordinate);
+						dataObject.put("tag", tag);
+					} catch (JSONException e) {
+						e.printStackTrace();
+					}
+					
+					Log.i("DATA",dataObject.toString());
+					msg.obj = dataObject;	
+//					msg.obj = connection.getUser()+timestamp+coordinate+tag;
+					mHandler.sendMessage(msg);
+
+				}
+			}).setNegativeButton(R.string.cancel,
+			new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int button) {
+					return;
+				}
+			}).show();
+
+	}
+	
+	private Handler mHandler = new Handler(){
+		@Override
+		public void handleMessage(android.os.Message msg) {
+			super.handleMessage(msg);
+			switch (msg.what) {
+			case 123:
+				JSONObject dataObject = new JSONObject();
+				dataObject = (JSONObject) msg.obj;
+				String s = msg.obj.toString();
+				
+				Log.i("DATA2",dataObject.toString());
+				break;
+			}
+		}
+	};
+	
+	
 	/**Send message function*/
 	public void SendMessage(XMPPConnection connection, String room, String textMessage){
 		
@@ -249,7 +340,7 @@ public class MultiRoom {
 //			String text = textMessage.getText().toString();
 			if(!textMessage.equals("")&&textMessage!=null){
 				
-				Message message = new Message(room + "@conference.myria",Message.Type.groupchat);  
+				Message message = new Message(room + "@"+serviceName,Message.Type.groupchat);  
 	            message.setBody(textMessage);  
 				try {
 					if (muc != null) {
@@ -278,7 +369,7 @@ public class MultiRoom {
 	public void SendNotification(XMPPConnection connection, String room, String content){
 
 		MultiUserChat muc = new MultiUserChat(connection, room);  
-		Message message = new Message(muc.getRoom()+"@conference.myria", Message.Type.groupchat);  
+		Message message = new Message(muc.getRoom()+"@"+serviceName, Message.Type.groupchat);  
         message.setBody(content);  
 		 
 		try {
@@ -330,9 +421,9 @@ public class MultiRoom {
 				e.printStackTrace();
 			}
 		}
-	    MultiUserChat muc = new MultiUserChat(connection, room+"@conference.myria"); //Must write room- jid  
+	    MultiUserChat muc = new MultiUserChat(connection, room+"@"+serviceName); //Must write room- jid  
 	    try {
-			muc.destroy("destroy reason", room + "@conference.myria");
+			muc.destroy("destroy reason", room + "@"+serviceName);
 			Log.i("LEAVE_ROOM",connection.getUser()+" Destroy the room");
 //			room = null;
 		} catch (XMPPException e) {
