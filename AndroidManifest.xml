@@ -67,14 +67,14 @@
         <activity android:name="openfire.chat.activity.RegisterActivity" />
         <activity android:name="openfire.chat.activity.ChatMainActivity" />
         <activity
-            android:name="easydarwin.android.videostreaming.SettingsActivity"
+            android:name="easydarwin.android.service.SettingsActivity"
             android:label="@string/title_activity_settings" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="easydarwin.android.videostreaming.VideoStreamingFragment" />
         </activity>
 
-        <service android:name="easydarwin.android.videostreaming.CommandService" />
+        <service android:name="easydarwin.android.service.CommandService" />
 
         <!-- VLC Part -->
  		<activity android:name="org.videolan.vlc.gui.VLCMainActivity"/>

@@ -1,4 +1,4 @@
-package easydarwin.android.videostreaming;
+package easydarwin.android.service;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;

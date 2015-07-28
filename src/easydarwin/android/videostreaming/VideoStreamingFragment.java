@@ -62,6 +62,8 @@ import org.videolan.vlc.VLCCallbackTask;
 import org.videolan.vlc.audio.AudioServiceController;
 import org.videolan.vlc.gui.VLCMainActivity;
 
+import easydarwin.android.service.EasyCameraApp;
+import easydarwin.android.service.SettingsActivity;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -1295,7 +1297,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 			case MotionEvent.ACTION_DOWN:
 				
-				String timestamp = new SimpleDateFormat("yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
+				String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime());
 				
 				paintThread.setBubble(touchX, touchY);
 				/** send message */

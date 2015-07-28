@@ -1,10 +1,21 @@
 package easydarwin.android.videostreaming;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -23,6 +34,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -35,12 +47,14 @@ public class MultiRoom {
 	private final int MESSAGEVIEW = 3;
 	
 	private static final String serviceName = "conference.myria";
+	private static final int DB_STREAMING_TOUCHINFO = 1;
+	// store touch event info into MySQL
+	private static final String URL_INSERT = "http://129.128.184.46/new.php";
 	
 	private Activity context;
 
 	private String rooom;
 	
-//	private Handler mHandler = new Handler();
 	
 	public MultiRoom(Activity context){
 		this.context = context;
@@ -278,21 +292,20 @@ public class MultiRoom {
 			        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
 			        */
 					// store the touch event data
-					android.os.Message msg = new android.os.Message();
-					msg.what = 123;
 					JSONObject dataObject = new JSONObject();
 					try {
-						dataObject.put("user", connection.getUser());
+						dataObject.put("username", connection.getUser().split("/")[0]);
 						dataObject.put("timestamp", timestamp);
 						dataObject.put("coordinate", coordinate);
-						dataObject.put("tag", tag);
+						dataObject.put("annotation", tag);
 					} catch (JSONException e) {
 						e.printStackTrace();
 					}
 					
 					Log.i("DATA",dataObject.toString());
+					android.os.Message msg = new android.os.Message();
+					msg.what = DB_STREAMING_TOUCHINFO;
 					msg.obj = dataObject;	
-//					msg.obj = connection.getUser()+timestamp+coordinate+tag;
 					mHandler.sendMessage(msg);
 
 				}
@@ -311,17 +324,66 @@ public class MultiRoom {
 		public void handleMessage(android.os.Message msg) {
 			super.handleMessage(msg);
 			switch (msg.what) {
-			case 123:
-				JSONObject dataObject = new JSONObject();
-				dataObject = (JSONObject) msg.obj;
-				String s = msg.obj.toString();
+			case DB_STREAMING_TOUCHINFO:
 				
-				Log.i("DATA2",dataObject.toString());
+				new MyAsyncTask().execute(msg.obj.toString());	
+			
 				break;
 			}
 		}
 	};
 	
+	private class MyAsyncTask extends AsyncTask<String, Integer, Double>{
+		 
+		@Override
+		protected Double doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			postData(params[0]);
+			return null;
+		}
+ 
+		public void postData(String data) {
+			// Create a new HttpClient and Post Header
+			HttpClient httpclient = new DefaultHttpClient();
+			HttpPost httppost = new HttpPost("http://129.128.184.46/db_insertInfo.php");
+			
+			try {
+				JSONObject dataObject = new JSONObject(data);
+				
+				List<NameValuePair> params = new ArrayList<NameValuePair>();
+	            params.add(new BasicNameValuePair("username", dataObject.get("username").toString()));
+	            params.add(new BasicNameValuePair("timestamp", dataObject.get("timestamp").toString()));
+	            params.add(new BasicNameValuePair("coordinate", dataObject.get("coordinate").toString()));
+	            params.add(new BasicNameValuePair("annotation", dataObject.get("annotation").toString()));
+
+	            httppost.setEntity(new UrlEncodedFormEntity(params));
+	            
+				// Execute HTTP Post Request
+				HttpResponse response = httpclient.execute(httppost);
+				String result = EntityUtils.toString(response.getEntity());
+
+				// "success":1,"message":"Touch event info successfully created."}
+				
+				JSONObject resultJson = new JSONObject(result);
+				if(resultJson.get("success").equals("1")){
+					//
+				}else{
+					//
+				}
+					
+			} catch (JSONException e) {
+				e.printStackTrace();
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}	
+			
+		}
+ 
+	}
 	
 	/**Send message function*/
 	public void SendMessage(XMPPConnection connection, String room, String textMessage){

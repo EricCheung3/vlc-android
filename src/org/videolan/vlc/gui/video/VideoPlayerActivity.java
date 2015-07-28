@@ -1398,7 +1398,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         case MotionEvent.ACTION_DOWN:
         	
-        	String timestamp = new SimpleDateFormat("yyyy_MMdd_HHmmss").format(Calendar.getInstance().getTime());
+        	String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime());
         	// draw circle
         	paintThread.setBubble(xTouch, yTouch);
 	        /** send message*/

@@ -1,4 +1,4 @@
-package easydarwin.android.videostreaming;
+package easydarwin.android.service;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
