@@ -170,6 +170,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	public static MultiRoom mRoom;
 	private String room = null; // "room3"
+	
+	//TODO: 
+	public static String Password;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -225,8 +228,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			// Integer.parseInt(mPort), mVideoName));
 
 		}
-
-		/** TODO */
+		
 		/** Invitation Listener */
 		InvitationListener(connection);
 		// send available after return from VideoPlayerActivity.java
@@ -468,22 +470,27 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 					public void invitationReceived(Connection conn,
 							String room, String inviter, String reason,
 							String password, Message message) {
-
-						mRoom.setChatRoom(room.split("@")[0]); // userB.Room =
-																// userA.Room if
-																// userA.Room!=null
+						
+						// userB.Room = userA.Room if userA.Room!=null
+						mRoom.setChatRoom(room.split("@")[0]); 
+						
 						// accepted by default
-						MultiUserChat multiUserChat = new MultiUserChat(conn,
-								room);
+						MultiUserChat muc = new MultiUserChat(conn, room);
 						try {
-							multiUserChat.join(conn.getUser());
+							//TODO 1: require password >>>>>>>>>>>>>>>>>>>>.
+							Log.i("VideoStreamingF", "password: "+ password);
+							muc.join(conn.getUser(), password);
+							Password = password;
+							
+//							muc.join(conn.getUser());
 							Log.i("INVITATION", "invite to join success!");
+							Log.i("VideoStreamingF", password);
 						} catch (XMPPException e) {
 							e.printStackTrace();
 						}
 						final String inviterr = inviter;
 						// streaming link listener
-						multiUserChat.addMessageListener(new PacketListener() {
+						muc.addMessageListener(new PacketListener() {
 							@Override
 							public void processPacket(Packet packet) {
 								Message message = (Message) packet;
@@ -664,7 +671,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 										Presence.Type.available);
 								connection.sendPacket(presence);
 							} catch (XMPPException e1) {
-								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
 						}
@@ -682,11 +688,19 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						}
 					}
 					try {
-						if (mRoom.createMultiUserRoom(connection, room))
-							Log.i("CREATEROOM", "success!");
-						if (mRoom.inviteToChatRoom(connection, room,
-								selectedListMap))
-							Log.i("INVITEROOM", "success!");
+	
+						//TODO 2: require password >>>>>>>>>>>>>>>>>>>>.
+						if (mRoom.createMultiUserRoom(connection, room, "1234"))
+							Log.i("CREATEROOM", "require password >>>>>>>>>>>>>>>>>>>>.");
+						if (mRoom.inviteToChatRoom(connection, room, selectedListMap, "1234"))
+							Log.i("INVITEROOM", "require password >>>>>>>>>>>>>>>>>>>>.");
+						
+//						
+//						if (mRoom.createMultiUserRoom(connection, room))
+//							Log.i("CREATEROOM", "success!");
+//						if (mRoom.inviteToChatRoom(connection, room, selectedListMap))
+//							Log.i("INVITEROOM", "success!");
+
 					} catch (XMPPException e) {
 						e.printStackTrace();
 					}
@@ -710,7 +724,6 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			try {
 				connection.connect();
 			} catch (XMPPException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -1228,6 +1241,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		}
 	};
 
+	/** Paint thread: to draw a circle in a thread*/
 	class PaintThread extends Thread {
 		private boolean run = false;
 		private float bubbleX = -100;
@@ -1284,7 +1298,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 	public PaintThread getThread() {
 		return paintThread;
 	}
-	
+	// touch listener
 	private final OnTouchListener paintViewTouchListener = new OnTouchListener() {
 
 		@Override

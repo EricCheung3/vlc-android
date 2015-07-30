@@ -48,8 +48,7 @@ public class MultiRoom {
 	
 	private static final String serviceName = "conference.myria";
 	private static final int DB_STREAMING_TOUCHINFO = 1;
-	// store touch event info into MySQL
-	private static final String URL_INSERT = "http://129.128.184.46/new.php";
+
 	
 	private Activity context;
 
@@ -94,7 +93,7 @@ public class MultiRoom {
 		// configure the room 
 		List<String> roomOwner = new ArrayList<String>();
 		roomOwner.add(connection.getUser());
-		submitForm.setAnswer("muc#roomconfig_roomowners", roomOwner);
+			
         submitForm.setAnswer("muc#roomconfig_persistentroom", false);   
         submitForm.setAnswer("muc#roomconfig_membersonly", false);  
         submitForm.setAnswer("muc#roomconfig_allowinvites", true);          
@@ -102,6 +101,52 @@ public class MultiRoom {
         submitForm.setAnswer("x-muc#roomconfig_reservednick", true);  
         submitForm.setAnswer("x-muc#roomconfig_canchangenick", true);  
         submitForm.setAnswer("x-muc#roomconfig_registration", true);  
+        
+		muc.sendConfigurationForm(submitForm);
+		Log.i("CREATE_ROOM", roomName);
+		
+		return true;
+	}
+	
+	/**Create chat room with password [room protected]*/
+	public boolean createMultiUserRoom(XMPPConnection connection,
+			String roomName, String password) throws XMPPException {
+		//check for after videoPlaying back to streamingFragment
+		if(!connection.isConnected()){
+			Log.i("createMultiUserRoom-SECOND-CREATEROOM_BUG","connection == null!");
+			try {
+				connection.connect();
+			} catch (XMPPException e) {
+				e.printStackTrace();
+			}
+		}
+		// Get the MultiUserChatManager
+		// Create a MultiUserChat using an XMPPConnection for a room
+		MultiUserChat muc = new MultiUserChat(connection, roomName + "@"+serviceName); 
+
+		// Create the room
+		muc.create(roomName);
+		// Get the the room's configuration form
+		Form form = muc.getConfigurationForm();
+		// Create a new form to submit based on the original form
+		Form submitForm = form.createAnswerForm();
+
+		// configure the room 
+		List<String> roomOwner = new ArrayList<String>();
+		roomOwner.add(connection.getUser());
+			
+        submitForm.setAnswer("muc#roomconfig_persistentroom", false);   
+        submitForm.setAnswer("muc#roomconfig_membersonly", false);  
+        submitForm.setAnswer("muc#roomconfig_allowinvites", true);          
+        submitForm.setAnswer("muc#roomconfig_enablelogging", true);  
+        submitForm.setAnswer("x-muc#roomconfig_reservednick", true);  
+        submitForm.setAnswer("x-muc#roomconfig_canchangenick", true);  
+        submitForm.setAnswer("x-muc#roomconfig_registration", true);  
+        
+        // Set that the room requires a password
+        submitForm.setAnswer("muc#roomconfig_passwordprotectedroom", true);
+        // Set the password for the room
+        submitForm.setAnswer("muc#roomconfig_roomsecret", password);
         
 		muc.sendConfigurationForm(submitForm);
 		Log.i("CREATE_ROOM", roomName);
@@ -118,6 +163,23 @@ public class MultiRoom {
 			MultiUserChat muc = new MultiUserChat(connection, roomName
 					+ "@"+serviceName);
 			muc.join(connection.getUser());
+			Log.i("JOIN-USER-NAME",connection.getUser());
+
+			return true;
+		}
+		else
+			return false;
+	}
+	
+	/** Join a chat room with permission [password]
+	 * @throws XMPPException */
+	public boolean joinChatRoom(XMPPConnection connection, String roomName, String password) throws XMPPException {
+		if(connection!=null){
+			// Get the MultiUserChatManager
+			// Create a MultiUserChat using an XMPPConnection for a room
+			MultiUserChat muc = new MultiUserChat(connection, roomName
+					+ "@"+serviceName);
+			muc.join(connection.getUser(), password);
 			Log.i("JOIN-USER-NAME",connection.getUser());
 
 			return true;
@@ -143,30 +205,20 @@ public class MultiRoom {
 				// room.getName()+"@conference.myria" == room.getJid();
 				MultiUserChat muc = new MultiUserChat(connection, room.getJid());
 				
-				Iterator <String> sss = muc.getOccupants();
-				Log.i("ROOMLIST-OccupantsCount",Integer.toString(muc.getOccupantsCount())); 
-				Log.i("ROOMLIST-Occupants",sss.toString()); 
-				
+				Iterator <String> sss = muc.getOccupants();			
 				ArrayList<String> listUser = new ArrayList<String>();
 				while (sss.hasNext()) {
 			        String name = StringUtils.parseResource(sss.next());
 			        listUser.add(name);
 			        Log.e("ROOMLIST-------", "" + name);
 			    }
-				
-//				Collection<Affiliate> owners = muc.getOwners();
-//				for (Affiliate owner:owners){
-//					Log.i("ROOMLIST-OWNER",owner.toString()); 
-//					Log.i("ROOMLIST-OWNER",owner.getRole()); 
-//				}
+
 				roomList.add(room.getName());
             }     
 			Log.i("ROOMLIST",roomList.toString()); 
 			return roomList;
 		}else
 			return null;
-
-		
 	}
 	
 	
@@ -189,6 +241,26 @@ public class MultiRoom {
 		}else
 			return false;
 	}
+	
+	/** Invite users to a chat room with permission [password]
+	 * @throws XMPPException */
+	public boolean inviteToChatRoom(XMPPConnection connection, String roomName, ArrayList<String> friendsList, String password) throws XMPPException {
+
+		if(connection != null){
+			MultiUserChat muc = new MultiUserChat(connection, roomName
+					+ "@"+serviceName);
+			muc.join(connection.getUser()+"-owner", password);
+
+			// invite another users
+			for(String friend: friendsList){
+				Log.i("INVITATION-FRIENDS",friend);
+				muc.invite(friend, "Join us "+friend);
+			}
+		
+			return true;
+		}else
+			return false;
+	}
 
 	
 	/** ROOM message Listener*/
@@ -199,7 +271,6 @@ public class MultiRoom {
 			try {
 				connection.connect();
 			} catch (XMPPException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -217,7 +288,7 @@ public class MultiRoom {
 					@SuppressLint("NewApi")
 					public void run() {
 						
-						/** update UI [ne thread]
+						/** update UI [new thread]
 						 *  use handler to process it: display message
 						 */
 						String[] coordination = msg.split(",");
@@ -252,7 +323,7 @@ public class MultiRoom {
         			super.handleMessage(handlerMsg);
         			switch (handlerMsg.what) {
         			case PAINTVIEW:
-        				Log.i("handlerMsg", handlerMsg.obj.toString() );
+        				Log.i("PAINTVIEW", handlerMsg.obj.toString() );
 //        				Toast.makeText(context, handlerMsg.obj.toString(), Toast.LENGTH_SHORT).show();
         				/** redraw circle on screen in here */
         				/** NOTE: because Sender and Receiver use different technologies to draw circle,
@@ -326,6 +397,7 @@ public class MultiRoom {
 			switch (msg.what) {
 			case DB_STREAMING_TOUCHINFO:
 				
+				// use async thread to store touch info into database
 				new MyAsyncTask().execute(msg.obj.toString());	
 			
 				break;
@@ -337,7 +409,6 @@ public class MultiRoom {
 		 
 		@Override
 		protected Double doInBackground(String... params) {
-			// TODO Auto-generated method stub
 			postData(params[0]);
 			return null;
 		}
@@ -362,7 +433,7 @@ public class MultiRoom {
 				HttpResponse response = httpclient.execute(httppost);
 				String result = EntityUtils.toString(response.getEntity());
 
-				// "success":1,"message":"Touch event info successfully created."}
+				// {"success":1,"message":"Touch event info successfully created."}
 				
 				JSONObject resultJson = new JSONObject(result);
 				if(resultJson.get("success").equals("1")){

@@ -88,6 +88,7 @@ import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import easydarwin.android.videostreaming.MultiRoom;
 import easydarwin.android.videostreaming.VideoStreamingFragment;
 
@@ -789,6 +790,7 @@ public class VLCMainActivity extends ActionBarActivity {
         sendTextInfo(null, 0, 100);
     }
 
+    /** Rejoin chat room & request video streaming*/
     private void onOpenMRL() {
     	connection = VideoStreamingFragment.connection;
 		if (!connection.isConnected()) {
@@ -803,12 +805,12 @@ public class VLCMainActivity extends ActionBarActivity {
     	ArrayList<String> roomList = new ArrayList<String>();
     	MultiRoom mRoom = VideoStreamingFragment.mRoom;
     	
-    	try {
+    	try { // get chatting room list
     		roomList = mRoom.getChatRoomList(connection, serviceName);
 		} catch (XMPPException e) {
 			e.printStackTrace();
 		}
-
+    	// pop up room list and rejoin one of them
     	popupStreamingList(mRoom,roomList);
     		
 //    	
@@ -853,9 +855,14 @@ public class VLCMainActivity extends ActionBarActivity {
     }
 
     private PopupWindow popRoomList;
-
+    private String p = VideoStreamingFragment.Password;
+    // pop up room list
 	private void popupStreamingList(final MultiRoom mRoom,final ArrayList<String> roomList) {
 
+		
+		
+		
+		
 		final View v = getLayoutInflater().inflate(
 				R.layout.streamingroom_list, null, false);
 		int h = getWindowManager().getDefaultDisplay().getHeight();
@@ -883,11 +890,17 @@ public class VLCMainActivity extends ActionBarActivity {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View v, int position,
 					long id) {
-				// TODO Auto-generated method stub
+
+				if(p!=null){
+				
 				/** rejoin the chat Room*/
 				MultiUserChat muc = new MultiUserChat(connection, roomList.get(position)+ "@"+serviceName);
 				try {
-					muc.join(connection.getUser());
+					//TODO 4: require password >>>>>>>>>>>>>>>>>>>>.
+
+					muc.join(connection.getUser(), p);
+					
+					Log.i("VLCMainActivity--p",p);
 					Log.i("VLCMainActivity--rejoin user",connection.getUser());
 				} catch (XMPPException e) {
 					e.printStackTrace();
@@ -908,8 +921,15 @@ public class VLCMainActivity extends ActionBarActivity {
 				audioServiceController.load(streaminglink, false);
 				
 				popRoomList.dismiss();
+				
+			}else{
+				
+				popRoomList.dismiss();
+				Toast.makeText(getApplicationContext(), "Can't join because of No password", Toast.LENGTH_SHORT).show();		
 			}
 
+			}
+			
 		});
 	}
 	

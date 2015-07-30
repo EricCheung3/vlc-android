@@ -533,8 +533,9 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 					PAINTViewRoomMsgListener(connection, invitedRoom);
 					
 					try {
-						if(mRoom.joinChatRoom(connection,invitedRoom))
-							Log.i("invitedRoom",invitedRoom+"success");			
+						//TODO 3: require password >>>>>>>>>>>>>>>>>>>>.
+						if(mRoom.joinChatRoom(connection,invitedRoom, "1234"))
+							Log.i("invitedRoom",invitedRoom+"success with password");			
 					} catch (XMPPException e) {
 						e.printStackTrace();
 					}
