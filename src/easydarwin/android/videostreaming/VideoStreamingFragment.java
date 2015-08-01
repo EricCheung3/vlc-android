@@ -60,15 +60,10 @@ import org.jivesoftware.smackx.search.UserSearch;
 import org.videolan.vlc.R;
 import org.videolan.vlc.VLCCallbackTask;
 import org.videolan.vlc.audio.AudioServiceController;
-import org.videolan.vlc.gui.VLCMainActivity;
 
-import easydarwin.android.service.EasyCameraApp;
-import easydarwin.android.service.SettingsActivity;
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -113,6 +108,8 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
+import easydarwin.android.service.EasyCameraApp;
+import easydarwin.android.service.SettingsActivity;
 
 @SuppressLint("ClickableViewAccessibility")
 public class VideoStreamingFragment extends Fragment implements Callback,
@@ -156,7 +153,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 
 	public static XMPPConnection connection;
 	private String streaminglink = "";
-	private String streaminglinkTag = "rtsp://129.128.184.46:8554/";
+	private String streaminglinkTag = "";//"rtsp://129.128.184.46:8554/";
 	private String curDateTime;
 
 	/** draw a circle when touch the screen */
@@ -181,7 +178,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		connection = LoginActivity.connection;
 		// check for after videoPlaying back to streamingFragment
 		if (!connection.isConnected()) {
-			Log.i("0-SECOND-CREATEROOM_BUG", "connection == null!");
+			Log.i("SECOND-CREATEROOM_BUG", "connection == null!");
 			try {
 				connection.connect();
 			} catch (XMPPException e) {
@@ -212,6 +209,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 //		streaminglink = streaminglinkTag + getDefaultDeviceId()+ curDateTime + ".sdp";
 //		streaminglink = "rtsp://129.128.184.46:8554/live.sdp";
 		
+//		streaminglinkTag = "rtsp://"+mAddress+":"+mPort+"/";
 		 
 		boolean bParamInvalid = (TextUtils.isEmpty(mAddress)
 				|| TextUtils.isEmpty(mPort) || TextUtils.isEmpty(mVideoName));
@@ -642,18 +640,27 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 			public void onClick(View view) {
 				curDateTime = new SimpleDateFormat("yyyy_MMdd_HHmmss")
 						.format(Calendar.getInstance().getTime());
-				streaminglink = streaminglinkTag + "room" + curDateTime + ".sdp";
-				Log.i("VideoStreaming--Streaminglink",streaminglink);
+				
+				// generate a chat room according current time
 				room = "room" + curDateTime;
 				mRoom.setChatRoom(room);
 				Log.i("MULTIROOM-ROOM", room);
+		
 				/** room message listening in back-end while video is playing */
 				mRoom.RoomMsgListenerConnection(connection, mRoom.getChatRoom());
 				/** draw circle on screen according the coordination */
 				PAINTViewRoomMsgListener(connection, mRoom.getChatRoom());
 				// START TO PUSH VIDEO
 				PLAYVideoStreaming(room);
-				Log.i("PLAY", "following should be streainglink====");
+
+				
+				// get the streaming link
+				Log.i("VideoStreamingFragment:IP",mAddress+":"+mPort);
+				
+				streaminglinkTag = "rtsp://"+ mAddress +":"+ mPort +"/";				
+				streaminglink = streaminglinkTag + room + ".sdp";
+				
+				
 				if (popFriends != null)
 					popFriends.dismiss();
 				// SEND VIDOE NOTIFICATION TO SELECTED FRIENDS
@@ -787,7 +794,7 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 		stramingSender.setText("invitation from: " + inviter);
 
 		TextView stramingLink = (TextView) v.findViewById(R.id.streaming_link);
-		String[] subject = message.split("8554/");
+		String[] subject = message.split("room"); //TODO
 		final String receiveStreaming = message.toString();
 		Log.i("VideoStreamingFragment","receiveStreaming:"+ receiveStreaming);
 		stramingLink.setText("subject: " + subject[1]);
@@ -1324,8 +1331,9 @@ public class VideoStreamingFragment extends Fragment implements Callback,
 						+ Float.toString(touchY);
 				
 		        /** store these data
-		        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
-		        */// tag some annotation
+		        [connection.getUser(), timestamp, (xTouch, yTouch), tag]*/
+				// pop up annotation window to add some annotation
+				// and Store touch info
 				mRoom.touchAnnotation(connection, room, timestamp, coordinate);
 				
 				Log.i("VideoStreamingFragment", Float.toString(touchX)

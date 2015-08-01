@@ -48,6 +48,8 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.muc.MultiUserChat;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.videolan.libvlc.EventHandler;
 import org.videolan.libvlc.IVideoPlayer;
 import org.videolan.libvlc.LibVLC;
@@ -95,6 +97,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -109,6 +112,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnSystemUiVisibilityChangeListener;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import android.view.animation.Animation;
@@ -122,6 +126,7 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import easydarwin.android.videostreaming.MultiRoom;
+import easydarwin.android.videostreaming.MultiRoom.MyAsyncTask;
 import easydarwin.android.videostreaming.VideoStreamingFragment;
 
 @SuppressLint("ClickableViewAccessibility")
@@ -249,6 +254,8 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     // Tips
 //    private View mOverlayTips;
     private static final String PREF_TIPS_SHOWN = "video_player_tips_shown";
+
+	protected static final int TAG_STREAMING_TOUCHINFO = 77;
 
     // Navigation handling (DVD, Blu-Ray...)
 //    private ImageButton mNavMenu;
@@ -396,6 +403,12 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
                        
         }
         
+        
+		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mPaint.setColor(Color.GREEN);
+		mPaint.setStyle(Style.STROKE);
+		
+		
         /** Touch Event SurfaceView */
     	paintView = (SurfaceView) findViewById(R.id.drawView);	
     	paintViewHolder = paintView.getHolder();
@@ -406,7 +419,11 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
     		paintViewHolder.addCallback(paintViewCallback);
                        
         }
-    	
+
+        
+    	paintView.setOnTouchListener(paintViewTouchListener);
+//    	paintView.setOnClickListener(paintViewClickListener);
+        
         
         /** TODO:
          * get XMPPConnection [need to reconnect to the server]
@@ -1350,143 +1367,192 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
         paintview.invalidate();
     }
 
-    /**
-     * show/hide the overlay
-     */
-    /**HERE IS THE TOUCH EVENT */
-    /**
-     * shield all the event of original vlc,
-     * and touch interesting point on screen
-     */
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-//        if (mIsLocked) {
-//            // locked, only handle show/hide & ignore all actions
-//            if (event.getAction() == MotionEvent.ACTION_UP) {
+//    /**
+//     * show/hide the overlay
+//     */
+//    /**HERE IS THE TOUCH EVENT */
+//    /**
+//     * shield all the event of original vlc,
+//     * and touch interesting point on screen
+//     */
+//    @Override
+//    public boolean onTouchEvent(MotionEvent event) {
+////        if (mIsLocked) {
+////            // locked, only handle show/hide & ignore all actions
+////            if (event.getAction() == MotionEvent.ACTION_UP) {
+////                if (!mShowing) {
+////                    showOverlay();
+////                } else {
+////                    hideOverlay(true);
+////                }
+////            }
+////            return false;
+////        }
+//
+////        DisplayMetrics screen = new DisplayMetrics();
+////        getWindowManager().getDefaultDisplay().getMetrics(screen);
+////        if (mSurfaceYDisplayRange == 0)
+////            mSurfaceYDisplayRange = Math.min(screen.widthPixels, screen.heightPixels);
+//
+////        float y_changed = event.getRawY() - mTouchY;
+////        float x_changed = event.getRawX() - mTouchX;
+//
+//        // coef is the gradient's move to determine a neutral zone
+////        float coef = Math.abs (y_changed / x_changed);
+////        float xgesturesize = ((x_changed / screen.xdpi) * 2.54f);
+//
+//		/**Bug3[solved 2] Receiver-->Sender
+//		 * change the coordinate according to the video size and surface size!
+//		 * */
+//        /* Offset for Mouse Events */
+//    	/**right coordinate on screen, don't change it*/
+//        int[] offset = new int[2];
+//        mSurface.getLocationOnScreen(offset);
+//        float xTouch = (event.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth();
+//        float yTouch = (event.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight();
+//
+//
+//        switch (event.getAction()) {
+//
+//        case MotionEvent.ACTION_DOWN:
+//        	
+//        	String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime());
+//        	// draw circle
+//        	paintThread.setBubble(xTouch, yTouch);
+//	        /** send message*/
+//	        // [Receiver] --> [Sender]
+//	        // because there's an 90 degree [clockwise] rotation of the video,
+//			// so switch x and y coordinate
+//			// (x,y)-->(SurfaceWidthY-y,x)
+//	        String coordinateMsgRotation = "PaintView," + Float.toString(mSurface.getHeight() - yTouch*mSurface.getHeight()/mVideoHeight) +","
+//	        		+ Float.toString(xTouch*mSurface.getWidth()/mVideoWidth);
+//	        mRoom.SendMessage(connection, invitedRoom, coordinateMsgRotation);
+//	        
+//	        String coordinate = Float.toString(xTouch) + ","
+//					+ Float.toString(yTouch);
+//	        
+//	        final String t = timestamp;
+//	        final String c = coordinate;
+//	        /** store these data
+//	        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
+//	        */// add some annotation
+//	        
+//
+//	        
+//	        
+////	        (new Thread(){
+////	        	@Override
+////	        	public void run(){
+////	        		Log.i("TAG","mRoom.touchAnnotation");
+////	        		mRoom.touchAnnotation(connection, invitedRoom, t, c);
+////	        	}
+////	        }).start();
+//	        
+////	        JSONObject timestamp_coor = new JSONObject();
+////			try {
+////				timestamp_coor.put("timestamp", timestamp);
+////				timestamp_coor.put("coordinate", coordinate);
+////			} catch (JSONException e) {
+////				e.printStackTrace();
+////			}
+////			
+////			android.os.Message msg = new android.os.Message();
+////			msg.what = TAG_STREAMING_TOUCHINFO;
+////			msg.obj = timestamp_coor;	
+////			tHandler.sendMessage(msg);
+//			
+//			
+//        	/**new test for landscape of screen 
+//        	paintThread.setBubble(xTouch, yTouch);
+//        	String XY = "PaintView," + Float.toString(xTouch)+","+ Float.toString(yTouch);
+////        	String XY1 = "PaintView," + Float.toString(xTouch*mSurface.getWidth()/mVideoWidth+offset[0])
+////        			+","+ Float.toString(yTouch*mSurface.getHeight()/mVideoHeight+offset[1]);
+//        	mRoom.SendMessage(connection, invitedRoom, XY);
+//        	*/
+//        	
+//            break;
+//
+// /*
+//            // Audio
+////            mTouchY = event.getRawY();
+////            mVol = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+////            mTouchAction = TOUCH_NONE;
+////            // Seek
+////            mTouchX = event.getRawX();
+////            // Mouse events for the core
+////            LibVLC.sendMouseEvent(MotionEvent.ACTION_DOWN, 0, xTouch, yTouch);
+//            break;
+//
+//        case MotionEvent.ACTION_MOVE:
+//            // Mouse events for the core
+//            LibVLC.sendMouseEvent(MotionEvent.ACTION_MOVE, 0, xTouch, yTouch);
+//
+//            // No volume/brightness action if coef < 2 or a secondary display is connected
+//            //TODO : Volume action when a secondary display is connected
+//            if (coef > 2 && mPresentation == null) {
+//                // Volume (Up or Down - Right side)
+//                if (!mEnableBrightnessGesture || (int)mTouchX > (screen.widthPixels / 2)){
+//                    doVolumeTouch(y_changed);
+//                }
+//                // Brightness (Up or Down - Left side)
+//                if (mEnableBrightnessGesture && (int)mTouchX < (screen.widthPixels / 2)){
+//                    doBrightnessTouch(y_changed);
+//                }
+//                // Extend the overlay for a little while, so that it doesn't
+//                // disappear on the user if more adjustment is needed. This
+//                // is because on devices with soft navigation (e.g. Galaxy
+//                // Nexus), gestures can't be made without activating the UI.
+//                if(AndroidDevices.hasNavBar())
+//                    showOverlay();
+//            }
+//            // Seek (Right or Left move)
+//            doSeekTouch(coef, xgesturesize, false);
+//            break;
+//
+//        case MotionEvent.ACTION_UP:
+//            // Mouse events for the core
+//            LibVLC.sendMouseEvent(MotionEvent.ACTION_UP, 0, xTouch, yTouch);
+//
+//            // Audio or Brightness
+//            if ( mTouchAction == TOUCH_NONE) {  			              
 //                if (!mShowing) {
 //                    showOverlay();
 //                } else {
 //                    hideOverlay(true);
 //                }
 //            }
-//            return false;
-//        }
-
-//        DisplayMetrics screen = new DisplayMetrics();
-//        getWindowManager().getDefaultDisplay().getMetrics(screen);
-//        if (mSurfaceYDisplayRange == 0)
-//            mSurfaceYDisplayRange = Math.min(screen.widthPixels, screen.heightPixels);
-
-//        float y_changed = event.getRawY() - mTouchY;
-//        float x_changed = event.getRawX() - mTouchX;
-
-        // coef is the gradient's move to determine a neutral zone
-//        float coef = Math.abs (y_changed / x_changed);
-//        float xgesturesize = ((x_changed / screen.xdpi) * 2.54f);
-
-		/**Bug3[solved 2] Receiver-->Sender
-		 * change the coordinate according to the video size and surface size!
-		 * */
-        /* Offset for Mouse Events */
-    	/**right coordinate on screen, don't change it*/
-        int[] offset = new int[2];
-        mSurface.getLocationOnScreen(offset);
-        float xTouch = (event.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth();
-        float yTouch = (event.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight();
-
-
-        switch (event.getAction()) {
-
-        case MotionEvent.ACTION_DOWN:
-        	
-        	String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime());
-        	// draw circle
-        	paintThread.setBubble(xTouch, yTouch);
-	        /** send message*/
-	        // [Receiver] --> [Sender]
-	        // because there's an 90 degree [clockwise] rotation of the video,
-			// so switch x and y coordinate
-			// (x,y)-->(SurfaceWidthY-y,x)
-	        String coordinateMsgRotation = "PaintView," + Float.toString(mSurface.getHeight() - yTouch*mSurface.getHeight()/mVideoHeight) +","
-	        		+ Float.toString(xTouch*mSurface.getWidth()/mVideoWidth);
-	        mRoom.SendMessage(connection, invitedRoom, coordinateMsgRotation);
-	        
-	        String coordinate = Float.toString(xTouch) + ","
-					+ Float.toString(yTouch);
-	        
-	        /** store these data
-	        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
-	        */// add some annotation
-	        mRoom.touchAnnotation(connection, invitedRoom, timestamp, coordinate);
-
-        	/**new test for landscape of screen 
-        	paintThread.setBubble(xTouch, yTouch);
-        	String XY = "PaintView," + Float.toString(xTouch)+","+ Float.toString(yTouch);
-//        	String XY1 = "PaintView," + Float.toString(xTouch*mSurface.getWidth()/mVideoWidth+offset[0])
-//        			+","+ Float.toString(yTouch*mSurface.getHeight()/mVideoHeight+offset[1]);
-        	mRoom.SendMessage(connection, invitedRoom, XY);
-        	*/
-        	
-            break;
-
- /*
-            // Audio
-//            mTouchY = event.getRawY();
-//            mVol = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-//            mTouchAction = TOUCH_NONE;
 //            // Seek
-//            mTouchX = event.getRawX();
-//            // Mouse events for the core
-//            LibVLC.sendMouseEvent(MotionEvent.ACTION_DOWN, 0, xTouch, yTouch);
-            break;
+//            doSeekTouch(coef, xgesturesize, true);
+//            break;
+// */
+//
+//        }
+////        return mTouchAction != TOUCH_NONE;
+//        return true;
+//    }
+    
+	private Handler tHandler = new Handler(Looper.getMainLooper()){
+		@Override
+		public void handleMessage(android.os.Message msg) {
+			super.handleMessage(msg);
+			switch (msg.what) {
+			case TAG_STREAMING_TOUCHINFO:
+				try {
 
-        case MotionEvent.ACTION_MOVE:
-            // Mouse events for the core
-            LibVLC.sendMouseEvent(MotionEvent.ACTION_MOVE, 0, xTouch, yTouch);
+					JSONObject timestamp_coor = (JSONObject) msg.obj;
+					String timestamp = timestamp_coor.getString("timestamp");
+					String coordinate = timestamp_coor.getString("coordinate");
+					// use async thread to tag touch info 
+					mRoom.touchAnnotation(connection, invitedRoom, timestamp, coordinate);
+					
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
 
-            // No volume/brightness action if coef < 2 or a secondary display is connected
-            //TODO : Volume action when a secondary display is connected
-            if (coef > 2 && mPresentation == null) {
-                // Volume (Up or Down - Right side)
-                if (!mEnableBrightnessGesture || (int)mTouchX > (screen.widthPixels / 2)){
-                    doVolumeTouch(y_changed);
-                }
-                // Brightness (Up or Down - Left side)
-                if (mEnableBrightnessGesture && (int)mTouchX < (screen.widthPixels / 2)){
-                    doBrightnessTouch(y_changed);
-                }
-                // Extend the overlay for a little while, so that it doesn't
-                // disappear on the user if more adjustment is needed. This
-                // is because on devices with soft navigation (e.g. Galaxy
-                // Nexus), gestures can't be made without activating the UI.
-                if(AndroidDevices.hasNavBar())
-                    showOverlay();
-            }
-            // Seek (Right or Left move)
-            doSeekTouch(coef, xgesturesize, false);
-            break;
-
-        case MotionEvent.ACTION_UP:
-            // Mouse events for the core
-            LibVLC.sendMouseEvent(MotionEvent.ACTION_UP, 0, xTouch, yTouch);
-
-            // Audio or Brightness
-            if ( mTouchAction == TOUCH_NONE) {  			              
-                if (!mShowing) {
-                    showOverlay();
-                } else {
-                    hideOverlay(true);
-                }
-            }
-            // Seek
-            doSeekTouch(coef, xgesturesize, true);
-            break;
- */
-
-        }
-//        return mTouchAction != TOUCH_NONE;
-        return true;
-    }
+				break;
+			}
+		}
+	};
 
     /** Draw point thread */
 	class PaintThread extends Thread {
@@ -1523,7 +1589,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 						c.drawColor(Color.TRANSPARENT);
 						c.drawCircle(bubbleX, bubbleY, 30, mPaint);
 					}
-
+			        
 				} catch (IllegalArgumentException e) {
 					e.printStackTrace();
 				} finally {
@@ -1539,6 +1605,97 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 	public PaintThread getThread() {
 		return paintThread;
 	}
+	
+	/*** TOUCH EVENT REWRITE IN THIS WAY
+	 * ***/
+	
+    private final OnTouchListener paintViewTouchListener = new OnTouchListener() {
+
+		@Override
+		public boolean onTouch(View v, MotionEvent e) {
+			
+//			float touchX = e.getX();
+//			float touchY = e.getY();
+
+	        int[] offset = new int[2];
+	        mSurface.getLocationOnScreen(offset);
+	        float xTouch = (e.getRawX() - offset[0]) * mVideoWidth / mSurface.getWidth();
+	        float yTouch = (e.getRawY() - offset[1]) * mVideoHeight / mSurface.getHeight();
+			
+			switch (e.getAction()) {
+
+			case MotionEvent.ACTION_DOWN:
+				// draw circle
+				paintThread.setBubble(xTouch, yTouch);			
+				/** send coordinate  */
+		        /** send message*/
+		        // [Receiver] --> [Sender]
+		        // because there's an 90 degree [clockwise] rotation of the video,
+				// so switch x and y coordinate
+				// (x,y)-->(SurfaceWidthY-y,x)
+		        String coordinateMsgRotation = "PaintView," + Float.toString(mSurface.getHeight() - yTouch*mSurface.getHeight()/mVideoHeight) +","
+		        		+ Float.toString(xTouch*mSurface.getWidth()/mVideoWidth);
+		        mRoom.SendMessage(connection, invitedRoom, coordinateMsgRotation);
+				String coordinateMsg = "PaintView,"
+						+ Float.toString(xTouch) + ","
+						+ Float.toString(yTouch);
+//				mRoom.SendMessage(connection, invitedRoom, coordinateMsg);
+
+				final String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime());
+				final String coordinate = Float.toString(xTouch) + ","+ Float.toString(yTouch);
+				
+				Log.i("VideoStreamingFragment", Float.toString(xTouch)+ "," + Float.toString(yTouch));
+				
+				// pop up add annotation window
+				AlertDialog.Builder tagDialog = new AlertDialog.Builder(VideoPlayerActivity.this);
+				final EditText input = new EditText(VideoPlayerActivity.this);
+
+				input.setHint("tag some annotation...");
+				tagDialog.setTitle(R.string.TAG_title).setView(input);
+				
+				tagDialog.setPositiveButton(R.string.TAG_send,
+					new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int button) {
+
+							final String tag = input.getText().toString();
+							mRoom.SendMessage(connection, invitedRoom, tag);
+							
+							/** store these data
+					        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
+					        */ // store the touch event data
+							JSONObject dataObject = new JSONObject();
+							try {
+								dataObject.put("username", connection.getUser().split("/")[0]);
+								dataObject.put("timestamp", timestamp);
+								dataObject.put("coordinate", coordinate);
+								dataObject.put("annotation", tag);
+							} catch (JSONException e) {
+								e.printStackTrace();
+							}
+									
+					        /** store these data
+					        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
+					        */// tag some annotation
+							mRoom.saveTouchInfo(dataObject.toString());
+							
+						}
+					}).setNegativeButton(R.string.cancel,
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int button) {
+								return;
+							}
+					}).show();
+
+				break;
+			}
+			
+			return true;
+		}
+    };
+    
+    
 	
 //    private void doSeekTouch(float coef, float gesturesize, boolean seek) {
 //        // No seek action if coef > 0.5 and gesturesize < 1cm
@@ -1923,13 +2080,14 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-    		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            mPaint.setColor(Color.GREEN);
-    		mPaint.setStyle(Style.STROKE);
+//    		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+//          mPaint.setColor(Color.GREEN);
+//    		mPaint.setStyle(Style.STROKE);
     		
         	paintThread = new PaintThread(holder);
         	paintThread.setRunning(true);
             paintThread.start();
+            
         }
 
         @Override

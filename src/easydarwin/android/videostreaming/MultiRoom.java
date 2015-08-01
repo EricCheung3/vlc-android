@@ -2,6 +2,7 @@ package easydarwin.android.videostreaming;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -48,6 +49,7 @@ public class MultiRoom {
 	
 	private static final String serviceName = "conference.myria";
 	private static final int DB_STREAMING_TOUCHINFO = 1;
+	public static final String URl = "http://129.128.184.46/db_insertInfo.php";
 
 	
 	private Activity context;
@@ -373,21 +375,30 @@ public class MultiRoom {
 						e.printStackTrace();
 					}
 					
-					Log.i("DATA",dataObject.toString());
-					android.os.Message msg = new android.os.Message();
-					msg.what = DB_STREAMING_TOUCHINFO;
-					msg.obj = dataObject;	
-					mHandler.sendMessage(msg);
+//					Log.i("DATA",dataObject.toString());
+//					android.os.Message msg = new android.os.Message();
+//					msg.what = DB_STREAMING_TOUCHINFO;
+//					msg.obj = dataObject;	
+//					mHandler.sendMessage(msg);
+					
+					// directly save data into database (not use a new thread)
+					new MyAsyncTask().execute(dataObject.toString());	
 
 				}
 			}).setNegativeButton(R.string.cancel,
-			new DialogInterface.OnClickListener() {
-				@Override
-				public void onClick(DialogInterface dialog, int button) {
-					return;
-				}
+				new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int button) {
+						return;
+					}
 			}).show();
 
+	}
+	
+	public void saveTouchInfo(String dataObject){
+		
+		Log.i("MultiRoom-->VideoPlayerActivity","Save success!");
+		new MyAsyncTask().execute(dataObject.toString());	
 	}
 	
 	private Handler mHandler = new Handler(){
@@ -405,7 +416,7 @@ public class MultiRoom {
 		}
 	};
 	
-	private class MyAsyncTask extends AsyncTask<String, Integer, Double>{
+	public class MyAsyncTask extends AsyncTask<String, Integer, Double>{
 		 
 		@Override
 		protected Double doInBackground(String... params) {
@@ -416,7 +427,7 @@ public class MultiRoom {
 		public void postData(String data) {
 			// Create a new HttpClient and Post Header
 			HttpClient httpclient = new DefaultHttpClient();
-			HttpPost httppost = new HttpPost("http://129.128.184.46/db_insertInfo.php");
+			HttpPost httppost = new HttpPost(URl);
 			
 			try {
 				JSONObject dataObject = new JSONObject(data);
@@ -435,12 +446,12 @@ public class MultiRoom {
 
 				// {"success":1,"message":"Touch event info successfully created."}
 				
-				JSONObject resultJson = new JSONObject(result);
-				if(resultJson.get("success").equals("1")){
-					//
-				}else{
-					//
-				}
+//				JSONObject resultJson = new JSONObject(result);
+//				if(resultJson.get("success").equals("1")){
+//					//
+//				}else{
+//					//
+//				}
 					
 			} catch (JSONException e) {
 				e.printStackTrace();

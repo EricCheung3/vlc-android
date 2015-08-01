@@ -17,7 +17,7 @@
             android:summary="@string/settings30"
             android:title="@string/settings29" />
         <EditTextPreference
-            android:defaultValue="8554"
+            android:defaultValue="554"
             android:inputType="number"
             android:key="key_server_port"
             android:selectAllOnFocus="true"

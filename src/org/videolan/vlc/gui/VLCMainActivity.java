@@ -33,6 +33,7 @@ import org.videolan.libvlc.LibVlcUtil;
 import org.videolan.vlc.MediaLibrary;
 import org.videolan.vlc.R;
 import org.videolan.vlc.VLCApplication;
+import org.videolan.vlc.VLCCallbackTask;
 import org.videolan.vlc.audio.AudioService;
 import org.videolan.vlc.audio.AudioServiceController;
 import org.videolan.vlc.gui.SidebarAdapter.SidebarEntry;
@@ -47,8 +48,10 @@ import org.videolan.vlc.util.WeakHandler;
 import org.videolan.vlc.widget.SlidingPaneLayout;
 
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -56,7 +59,6 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -84,6 +86,7 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
@@ -812,8 +815,9 @@ public class VLCMainActivity extends ActionBarActivity {
 		}
     	// pop up room list and rejoin one of them
     	popupStreamingList(mRoom,roomList);
+    	
     		
-//    	
+    	
 //        AlertDialog.Builder b = new AlertDialog.Builder(this);
 //        final EditText input = new EditText(this);
 //        //input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
@@ -916,7 +920,9 @@ public class VLCMainActivity extends ActionBarActivity {
 				AudioServiceController audioServiceController = AudioServiceController
 						.getInstance();
 				// use audio as default player...
-				String streaminglink = "rtsp://129.128.184.46:8554/" + roomList.get(position) +".sdp";
+				String mAddress = mSettings.getString("key_server_address", null);
+				String mPort  = mSettings.getString("key_server_port", null);
+				String streaminglink = "rtsp://"+mAddress+":"+mPort+"/" + roomList.get(position) +".sdp";
 				Log.i("VLCMainActivity--request streaminglink", streaminglink);
 				audioServiceController.load(streaminglink, false);
 				
