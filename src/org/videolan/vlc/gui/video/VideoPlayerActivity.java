@@ -1667,6 +1667,7 @@ public class VideoPlayerActivity extends Activity implements IVideoPlayer {
 							JSONObject dataObject = new JSONObject();
 							try {
 								dataObject.put("username", connection.getUser().split("/")[0]);
+								dataObject.put("roomname", invitedRoom);
 								dataObject.put("timestamp", timestamp);
 								dataObject.put("coordinate", coordinate);
 								dataObject.put("annotation", tag);

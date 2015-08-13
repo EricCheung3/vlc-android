@@ -22,7 +22,7 @@ package net.majorkernelpanic.streaming.video;
 
 import java.util.Iterator;
 import java.util.List;
-
+import android.annotation.SuppressLint;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
 import android.util.Log;
@@ -130,6 +130,7 @@ public class VideoQuality {
 		return v;
 	}
 
+	@SuppressLint("NewApi")
 	public static int[] determineMaximumSupportedFramerate(Camera.Parameters parameters) {
 		int[] maxFps = new int[]{0,0};
 		String supportedFpsRangesStr = "Supported frame rates: ";

@@ -364,10 +364,12 @@ public class MultiRoom {
 					/** store these data
 			        [connection.getUser(), timestamp, (xTouch, yTouch), tag]
 			        */
+					//[connection.getUser(), roomname, timestamp, (xTouch, yTouch), tag]
 					// store the touch event data
 					JSONObject dataObject = new JSONObject();
 					try {
 						dataObject.put("username", connection.getUser().split("/")[0]);
+						dataObject.put("roomname", room);
 						dataObject.put("timestamp", timestamp);
 						dataObject.put("coordinate", coordinate);
 						dataObject.put("annotation", tag);
@@ -434,6 +436,7 @@ public class MultiRoom {
 				
 				List<NameValuePair> params = new ArrayList<NameValuePair>();
 	            params.add(new BasicNameValuePair("username", dataObject.get("username").toString()));
+	            params.add(new BasicNameValuePair("roomname", dataObject.get("roomname").toString()));
 	            params.add(new BasicNameValuePair("timestamp", dataObject.get("timestamp").toString()));
 	            params.add(new BasicNameValuePair("coordinate", dataObject.get("coordinate").toString()));
 	            params.add(new BasicNameValuePair("annotation", dataObject.get("annotation").toString()));
