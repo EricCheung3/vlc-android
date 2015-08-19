@@ -22,7 +22,7 @@ package net.majorkernelpanic.streaming.hw;
 
 import java.nio.ByteBuffer;
 
-import libs.JNIUtil;
+import net.majorkernelpanic.streaming.libs.JNIUtil;
 import android.media.MediaCodecInfo;
 
 /**

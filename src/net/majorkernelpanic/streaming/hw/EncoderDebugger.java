@@ -86,9 +86,7 @@ public class EncoderDebugger {
 	private MediaCodec mEncoder, mDecoder;
 	private int mWidth, mHeight, mSize;
 	private byte[] mSPS, mPPS;
-	/**
-	 * mData为转换了的模拟数据，mInitialImage为模拟数据
-	 */
+
 	private byte[] mData, mInitialImage;
 	private MediaFormat mDecOutputFormat;
 	private NV21Convertor mNV21;
